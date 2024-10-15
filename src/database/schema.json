@@ -1,0 +1,43 @@
+{
+    "1": {
+        "prover_details": {
+            "prover1": {
+                "proof": "0xabcd",
+                "type": "sp1",
+                "verified": true,
+                "timestamp": "Date::now()"
+            },
+            "prover2": {
+                "proof": "0xabcd",
+                "verified": true,
+                "type": "sp1",
+                "timestamp": "Date::now()"
+            },
+            "prover3": {
+                "proof": "0xabcd",
+                "verified": true,
+                "type": "risc0",
+                "timestamp": "Date::now()"
+            }
+        },
+        "poster_details": {
+            "solana": "yes",
+            "ethereum": "yes"
+        },
+        "threshold_verified": true,
+        "timestamp": "Date::now()"
+    },
+    "2": {
+        "prover_details": {
+            "prover1": {
+                "proof": "0xabcd",
+                "verified": true,
+                "type": "risc0",
+                "timestamp": "Date::now()"
+            }
+        },
+        "poster_details":{},
+        "threshold_verified": false,
+        "timestamp": "Date::now()"
+    }
+}

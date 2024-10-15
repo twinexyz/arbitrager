@@ -1,0 +1,29 @@
+[package]
+name = "arbitrager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.89"
+clap = { version = "4.5.20", features = ["derive","string"] }
+regex = "1.11.0"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_yaml = "0.9.34"
+
+# ethereum
+alloy = { version = "0.4.2", features = ["full","signer-keystore"] }
+alloy-primitives = "0.8.5"
+alloy-provider = "0.4.2"
+hex = "0.4.3"
+tokio = { version = "1.40.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+sp1-sdk = "2.0.0"
+jsonrpsee = { version = "0.24.6", features = ["http-client", "server"] }
+serde_json = "1.0.128"
+mongodb = "3.1.0"
+futures = { version = "0.3.31" }
+tracing-attributes = "0.1.27"
+
+
+
