@@ -81,7 +81,7 @@ pub fn make_providers(l1s: HashMap<String, L1Details>) -> HashMap<String, ChainP
         .map(|(key, detail)| {
             let provider = match detail {
                 L1Details::Solana(solana_config) => todo!(),
-                L1Details::Ethereum(evmconfig) => {
+                L1Details::EVM(evmconfig) => {
                     let evm_config = EVMProviderConfig::new(
                         evmconfig.rpc.clone(),
                         evmconfig.private_key.clone(),

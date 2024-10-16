@@ -34,7 +34,7 @@ pub struct ProverDetails {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum L1Details {
     Solana(SolanaConfig),
-    Ethereum(EVMConfig),
+    EVM(EVMConfig),
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -98,7 +98,7 @@ impl Config {
                         )));
                     }
                 }
-                L1Details::Ethereum(evmconfig) => {
+                L1Details::EVM(evmconfig) => {
                     // required evm validation
 
                     if !is_valid_url(&evmconfig.rpc) {
