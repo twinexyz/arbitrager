@@ -23,32 +23,30 @@ pub enum ProofType {
 pub enum ChainProviders {
     EVM(EVMProvider),
     SVM(),
+    DummyVM()
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum PostParams {
-    RiscZero(Risc0Params),
-    Sp1(Sp1params),
-    Dummy(DummyParams),
+    RiscZero(Risc0Params, u64),
+    Sp1(Sp1params, u64),
+    Dummy(DummyParams, u64),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Sp1params {
-    pub block: u64,
     pub vk: FixedBytes<32>,
     pub public_values: Bytes,
     pub plonk_proof: Bytes,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Risc0Params {
-    pub block: u64,
     pub proof: Vec<u8>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DummyParams {
-    pub block: u64,
     pub proof: Vec<u8>,
 }
 

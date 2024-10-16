@@ -4,11 +4,13 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 use crate::types::SupportedProvers;
-use crate::utils::url::is_valid_url;
+use crate::utils::check_directory_exists;
+use crate::utils::is_valid_url;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub global: GlobalConfig,
+    pub elf: HashMap<String, String>,
     pub provers: HashMap<String, ProverDetails>,
     pub l1s: HashMap<String, L1Details>,
 }
@@ -19,7 +21,7 @@ pub struct GlobalConfig {
     pub server_port: u16,
     pub threshold: usize,
     pub db_path: String,
-    pub balance_check_interval: u64 // in minutes
+    pub balance_check_interval: u64, // in minutes
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,14 +66,23 @@ impl Config {
             )));
         }
 
+        // Ensure ELF File exists
+        for (_, v) in &self.elf {
+            if !v.is_empty() && !check_directory_exists(v) {
+                return Err(Error::msg(
+                    format!("{} elf file does not exist", v).to_string(),
+                ));
+            }
+        }
+
         for (_, value) in &self.provers {
             if !is_valid_url(&value.prover_ip) {
                 return Err(Error::msg("prover grpc_server must be valid url"));
             }
 
             match SupportedProvers::from_str(&value.prover_type) {
-                Ok(_) => {},
-                Err(_) =>  return Err(Error::msg("prover type not supported"))
+                Ok(_) => {}
+                Err(_) => return Err(Error::msg("prover type not supported")),
             }
         }
 

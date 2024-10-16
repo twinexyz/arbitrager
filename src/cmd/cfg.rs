@@ -1,7 +1,7 @@
 use crate::{arbitrager::run, config::Config};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use std::{env::home_dir, fs::File, io::Read, path::PathBuf};
+use std::{env::home_dir, fs::File, io::Read, path::PathBuf, process::{self, ExitCode}};
 
 use super::logger::logging;
 
@@ -51,7 +51,11 @@ pub async fn init() {
                     // validate config
                     match cfg.validate() {
                         Ok(_) => {}
-                        Err(e) => eprintln!("{}", e),
+                        Err(e) => {
+                            eprintln!("Config Validation Failed. Error: {}", e);
+                            process::exit(1);
+
+                        }
                     }
                     // logging setup
                     logging(&cfg.global.logging);

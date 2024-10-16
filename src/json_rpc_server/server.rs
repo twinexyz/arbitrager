@@ -1,11 +1,8 @@
 use anyhow::Result;
-use jsonrpsee::{
-    server::Server,
-    RpcModule,
-};
+use jsonrpsee::{server::Server, RpcModule};
 use serde::{Deserialize, Serialize};
 use sp1_sdk::SP1ProofWithPublicValues;
-use std::{collections::HashMap, net::SocketAddr, str::FromStr, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::Sender;
 
 use crate::types::ProofType;
@@ -14,9 +11,18 @@ use crate::types::ProofType;
 #[serde(tag = "type")]
 enum ProofTypes {
     // TODO: ProofType for RISC0
-    RISC0Proof { proof: Vec<u8> },
-    SP1Proof { proof: SP1ProofWithPublicValues },
-    Dummy{ proof: Vec<u8>},
+    RISC0Proof {
+        proof: Vec<u8>,
+        identifier: String,
+    },
+    SP1Proof {
+        proof: SP1ProofWithPublicValues,
+        identifier: String,
+    },
+    Dummy {
+        proof: Vec<u8>,
+        identifier: String,
+    },
 }
 
 // pub trait TwineArbApi<T> {
@@ -27,21 +33,16 @@ enum ProofTypes {
 // }
 
 #[derive(Clone)]
-pub struct ProofReceiver {
-    valid_senders: Arc<HashMap<SocketAddr, String>>,
+pub struct JsonRpcServer {
+    // valid_senders: Arc<HashMap<SocketAddr, String>>,
+    valid_senders: Arc<HashMap<String, String>>,
     verifier_tx: Sender<ProofType>,
 }
 
-impl ProofReceiver {
+impl JsonRpcServer {
     pub fn new(addresses: HashMap<String, String>, verifier_tx: Sender<ProofType>) -> Self {
-        let mut valid_senders = HashMap::new();
-        let _ = addresses.iter().map(|k| {
-            let socket = SocketAddr::from_str(k.0).unwrap();
-            valid_senders.insert(socket, k.1.to_owned());
-        });
-
         Self {
-            valid_senders: Arc::new(valid_senders),
+            valid_senders: Arc::new(addresses),
             verifier_tx,
         }
     }
@@ -60,19 +61,15 @@ impl ProofReceiver {
                 async move {
                     let proof: ProofTypes = params.one().unwrap();
                     match proof {
-                        ProofTypes::RISC0Proof { proof } => {
+                        ProofTypes::RISC0Proof { ..} => {
                             panic!("Unimplemented!")
                         }
-                        ProofTypes::SP1Proof { proof } => {
-                            // TODO: Map incoming request to identifier from the config
-                            let identifier = "identifier1".to_owned();
+                        ProofTypes::SP1Proof { proof , identifier} => {
                             server_handle.handle_sp1_proof(proof, identifier).await;
                         }
-                        ProofTypes::Dummy { proof } => {
-                            let identifier = "i_1".to_owned();
+                        ProofTypes::Dummy { proof , identifier} => {
                             server_handle.handle_dummy_proof(proof, identifier).await;
-
-                        },
+                        }
                     }
                 }
             })
@@ -89,7 +86,12 @@ impl ProofReceiver {
         Ok(())
     }
 
-    async fn handle_sp1_proof(&self, proof: SP1ProofWithPublicValues, identifier: String) {
+    async fn handle_sp1_proof(&self, proof: SP1ProofWithPublicValues, identifier: String)  {
+        if !self.valid_senders.contains_key(&identifier) {
+            tracing::error!("Invalid sender. Identifier:{}", identifier);
+            return;
+        }
+
         self.verifier_tx
             .send(ProofType::SP1Proof(proof, identifier))
             .await
@@ -111,7 +113,10 @@ impl ProofReceiver {
   "params": [
     {
       "type": "RISC0Proof",
-      "proof": [1, 2, 3, 4, 5]
+      "identifier": "prover-1",
+      "proof":{
+        "entire-proof-json"
+      }
     }
   ],
   "id": 1

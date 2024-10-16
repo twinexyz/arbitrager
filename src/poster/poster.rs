@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use tokio::sync::mpsc::{Receiver, Sender};
+use tracing::info;
 
 use crate::types::{ChainProviders, PostParams};
 
@@ -13,19 +14,16 @@ pub struct PostStatus {
 
 pub struct Poster {
     pub providers: HashMap<String, ChainProviders>,
-    pub post_rx: Receiver<PostParams>,
     pub post_status_tx: Sender<PostStatus>,
 }
 
 impl Poster {
     pub fn new(
         l1s: HashMap<String, ChainProviders>,
-        post_rx: Receiver<PostParams>,
         post_status_tx: Sender<PostStatus>,
     ) -> Self {
         Self {
             providers: l1s,
-            post_rx,
             post_status_tx,
         }
     }
@@ -33,27 +31,56 @@ impl Poster {
     /// The data field incoming in the channel expects all the required parameters to post to the contract
     /// For verifying proof, it'll just be the public inputs and proof
     /// TODO: Communicate with the contract team for the structure
-    pub async fn run(&mut self) -> Result<()> {
+    pub async fn run(&self, mut post_rx: Receiver<PostParams>) -> Result<()> {
         tracing::info!("Prover service running");
-        while let Some(data) = self.post_rx.recv().await {
+        while let Some(data) = post_rx.recv().await {
             // mock post the data
-            let post_status = PostStatus {
-                chain: "ethereum".to_string(),
-                block: 10u64,
-                posted: false,
-            };
-            self.post_status_tx.send(post_status).await.unwrap();
 
-            // let _ = self.providers.iter().map(|k| {
-            //     let _chain = k.0;
-            //     match k.1 {
-            //         ChainProviders::EVM(evmprovider) => {
-            //             // evmprovider.send_transaction(transaction)
-            //             tracing::info!("Proof submitted. chain:{}", _chain)
-            //         }
-            //         ChainProviders::SVM() => todo!(),
-            //     }
-            // });
+            for (chain, provider) in &self.providers {
+                match provider {
+                    ChainProviders::EVM(evmprovider) => {
+                        let data_clone = data.clone();
+                        match evmprovider.post_to_evm(data_clone.clone()).await {
+                            Ok(_) => {
+                                tracing::info!("Proof submitted. chain:{}", chain);
+                                let post_status = match data_clone {
+                                    PostParams::RiscZero(_risc0_params, _) => todo!(),
+                                    PostParams::Sp1(_sp1params, block) => PostStatus {
+                                        chain: chain.clone().to_string(),
+                                        block,
+                                        posted: true,
+                                    },
+                                    PostParams::Dummy(_dummy_params, _) => todo!(),
+                                };
+                                info!("Post status received. Sending status to post_status channel");
+                                self.post_status_tx.send(post_status).await.unwrap();
+                            }
+                            Err(_) => {
+                                tracing::error!("Fail to submit proof. chain:{}", chain);
+                            }
+                        }
+                    }
+                    ChainProviders::SVM() => {
+                        tracing::info!("SVM provider is not yet implemented. chain:{}", chain);
+                        todo!();
+                    }
+                    ChainProviders::DummyVM() => {
+                        tracing::info!("Proof submitted to dummy verifier. chain:{}", chain);
+                        let data_clone = data.clone();
+                        let post_status = match data_clone {
+                            PostParams::RiscZero(risc0_params, _) => todo!(),
+                            PostParams::Sp1(sp1params, _) => todo!(),
+                            PostParams::Dummy(dummy_params, block) => PostStatus {
+                                chain: chain.to_string(),
+                                block,
+                                posted: true,
+                            },
+                        };
+
+                        self.post_status_tx.send(post_status).await.unwrap();
+                    }
+                }
+            }
         }
         Ok(())
     }

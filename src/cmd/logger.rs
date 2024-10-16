@@ -1,4 +1,5 @@
 use tracing::Level;
+use tracing_subscriber::EnvFilter;
 
 pub fn logging(level: &String) {
     
@@ -15,5 +16,6 @@ pub fn logging(level: &String) {
         .with_file(true)
         .with_line_number(true)
         .with_target(false)
+        .with_env_filter(EnvFilter::new("arbitrager=debug"))
         .init();
 }

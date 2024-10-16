@@ -1,21 +1,24 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use anyhow::Result;
-use tokio::{
-    sync::{mpsc, Mutex},
-    task,
-};
+use once_cell::sync::Lazy;
+use tokio::{sync::mpsc, task};
 
 use crate::{
     balance_checker::BalanceChecker,
     config::Config,
     database::db::DB,
-    json_rpc_server::server::ProofReceiver,
+    json_rpc_server::server::JsonRpcServer,
     poster::poster::Poster,
     types::{make_providers, ChainProviders},
     verifier::verifier::Verifier,
 };
 
+pub static ELF_CONFIG: Lazy<RwLock<HashMap<String, String>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
 
 pub async fn run(cfg: Config) -> Result<()> {
     tracing::info!("Starting twine arbitrager");
@@ -23,7 +26,7 @@ pub async fn run(cfg: Config) -> Result<()> {
     let provers: HashMap<String, String> = cfg
         .provers
         .iter()
-        .map(|k| (k.1.prover_ip.clone(), k.1.prover_type.clone()))
+        .map(|k| (k.0.clone(), k.1.prover_type.clone()))
         .collect();
 
     // To pass data from server to the verifier
@@ -41,17 +44,22 @@ pub async fn run(cfg: Config) -> Result<()> {
     let balance_check_interval = cfg.global.balance_check_interval;
     let l1s = cfg.l1s;
 
+    let elfs: HashMap<String, String> = cfg.elf;
+    {
+        let mut elf_config: std::sync::RwLockWriteGuard<'_, HashMap<String, String>> =
+            ELF_CONFIG.write().unwrap();
+        *elf_config = elfs;
+    }
+
     let providers: HashMap<String, ChainProviders> = make_providers(l1s);
     let balance_checker = BalanceChecker::new(providers.clone(), balance_check_interval);
 
-    let proof_receiver = ProofReceiver::new(provers, verifier_tx);
-    let db = Arc::new(Mutex::new(
-        DB::new(poster_tx, post_status_rx, threshold, db_path).await,
-    ));
+    let proof_receiver = JsonRpcServer::new(provers, verifier_tx);
+    let db_arc = Arc::new(DB::new(poster_tx, threshold, db_path).await);
 
-    let mut verifier = Verifier::new(verifier_rx, Arc::clone(&db));
+    let mut verifier = Verifier::new(verifier_rx, Arc::clone(&db_arc));
 
-    let mut poster = Poster::new(providers, poster_rx, post_status_tx);
+    let poster = Poster::new(providers, post_status_tx);
 
     let server_task = task::spawn(async move {
         proof_receiver
@@ -64,16 +72,19 @@ pub async fn run(cfg: Config) -> Result<()> {
         verifier.run().await.expect("Failed to run validator");
     });
 
-    let db_task = {
-        let db_clone = Arc::clone(&db);
-        task::spawn(async move {
-            let mut db_lock = db_clone.lock().await;
-            db_lock.run().await;
-        })
-    };
+    let db_clone = Arc::clone(&db_arc);
+    let db_task = tokio::spawn(async move {
+        db_clone
+            .run(post_status_rx)
+            .await
+            .expect("Failed to run db service");
+    });
 
     let poster_task = task::spawn(async move {
-        poster.run().await.expect("Failed to run validator");
+        poster
+            .run(poster_rx)
+            .await
+            .expect("Failed to run validator");
     });
 
     let balance_check_task = task::spawn(async move {
