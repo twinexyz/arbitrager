@@ -8,5 +8,5 @@ pub fn is_valid_url(url: &str) -> bool {
 
 pub fn check_directory_exists(path: &str) -> bool {
     let dir_path = Path::new(path);
-    dir_path.is_dir() 
+    dir_path.is_file()
 }
