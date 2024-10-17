@@ -62,19 +62,8 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
 
     let (_, vk) = client.setup(&elf);
 
-    let proof_file_path = "/Users/lilixac/twine/arbitrager/assets/proof.json".to_string();
-    let proof_file = fs::File::open(proof_file_path).unwrap();
-    let proof_object: Result<sp1_sdk::SP1ProofWithPublicValues, serde_json::Error> =
-        serde_json::from_reader(proof_file);
-    let prf = match proof_object {
-        Ok(proof) => proof,
-        Err(_) => todo!(),
-    };
 
-    // // let v = prf.proof.try_as_plonk().unwrap().plonk_vkey_hash.to_vec();
-    // // let x = hex::encode(v);
-
-    match client.verify(&prf, &vk) {
+    match client.verify(&proof, &vk) {
         Ok(_) => {
             tracing::info!("SP1 Proof locally verified!");
             let pub_values = proof.public_values.as_slice();
