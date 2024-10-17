@@ -6,6 +6,8 @@ Twine arbitrager aggregates proofs from the provers for twine node. When k out o
 
 ## Run Arbitrager
 1. Generate config based on config.yaml.
+    > Note: You might have to give network access to mongodb atlas if you're using one.
+
 
 
 2. Run the arbitrager as
