@@ -9,11 +9,12 @@ use tokio::{sync::mpsc, task};
 
 use crate::{
     balance_checker::BalanceChecker,
+    chains::chains::{make_providers, ChainProviders},
     config::Config,
     database::db::DB,
     json_rpc_server::server::JsonRpcServer,
     poster::poster::Poster,
-    types::{make_providers, ChainProviders},
+    types::make_threshold_map,
     verifier::verifier::Verifier,
 };
 
@@ -51,8 +52,11 @@ pub async fn run(cfg: Config) -> Result<()> {
         *elf_config = elfs;
     }
 
-    let providers: HashMap<String, ChainProviders> = make_providers(l1s);
-    let balance_checker = BalanceChecker::new(providers.clone(), balance_check_interval);
+    let providers: HashMap<String, ChainProviders> = make_providers(l1s.clone());
+    let balance_threshold: HashMap<String, String> = make_threshold_map(l1s);
+
+    let balance_checker =
+        BalanceChecker::new(providers.clone(), balance_threshold, balance_check_interval);
 
     let proof_receiver = JsonRpcServer::new(provers, verifier_tx);
     let db_arc = Arc::new(DB::new(poster_tx, threshold, db_path).await);

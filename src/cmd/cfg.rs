@@ -1,7 +1,7 @@
 use crate::{arbitrager::run, config::Config};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use std::{env::home_dir, fs::File, io::Read, path::PathBuf, process::{self, ExitCode}};
+use std::{env::home_dir, fs::File, io::Read, path::PathBuf, process::{self}};
 
 use super::logger::logging;
 
@@ -60,7 +60,12 @@ pub async fn init() {
                     // logging setup
                     logging(&cfg.global.logging);
 
-                    run(cfg).await;
+                    match run(cfg).await {
+                        Ok(_) => {},
+                        Err(e) => {
+                            tracing::error!("Error running arbitrager: {}", e);
+                        },
+                    }
                 }
                 Err(e) => {
                     eprintln!("Failed to load config: {}", e)

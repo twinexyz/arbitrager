@@ -2,14 +2,12 @@ use std::collections::HashMap;
 
 use alloy_primitives::Bytes;
 use alloy_primitives::FixedBytes;
+use anyhow::Error;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sp1_sdk::SP1ProofWithPublicValues;
-use anyhow::Result;
-use anyhow::Error;
 
 use crate::config::L1Details;
-use crate::evm::provider::EVMProvider;
-use crate::evm::provider::EVMProviderConfig;
 
 /// To be synced with json_rpc_server::ProofTypes
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,12 +17,7 @@ pub enum ProofType {
     Dummy(Vec<u8>, String),
 }
 
-#[derive(Clone)]
-pub enum ChainProviders {
-    EVM(EVMProvider),
-    SVM(),
-    DummyVM()
-}
+
 
 #[derive(Serialize, Deserialize, Clone)]
 pub enum PostParams {
@@ -49,7 +42,6 @@ pub struct Risc0Params {
 pub struct DummyParams {
     pub proof: Vec<u8>,
 }
-
 
 pub enum SupportedProvers {
     SP1,
@@ -76,30 +68,9 @@ impl SupportedProvers {
     }
 }
 
-pub fn make_providers(l1s: HashMap<String, L1Details>) -> HashMap<String, ChainProviders> {
+pub fn make_threshold_map(l1s: HashMap<String, L1Details>) -> HashMap<String, String> {
     l1s.iter()
-        .map(|(key, detail)| {
-            let provider = match detail {
-                L1Details::Solana(solana_config) => todo!(),
-                L1Details::EVM(evmconfig) => {
-                    let evm_config = EVMProviderConfig::new(
-                        evmconfig.rpc.clone(),
-                        evmconfig.private_key.clone(),
-                        evmconfig.contract.clone(),
-                    );
-
-                    evm_config
-                        .build()
-                        .map(|provider| {
-                            ChainProviders::EVM(EVMProvider {
-                                provider,
-                                config: evm_config,
-                            })
-                        })
-                        .unwrap_or_else(|_| panic!("Failed building provider!"))
-                }
-            };
-            (key.to_string(), provider)
-        })
+        .map(|(key, detail)| (key.to_string(), detail.get_balance_threshold()))
         .collect()
 }
+

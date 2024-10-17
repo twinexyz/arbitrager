@@ -30,17 +30,27 @@ pub struct ProverDetails {
     pub prover_type: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum L1Details {
     Solana(SolanaConfig),
     EVM(EVMConfig),
 }
 
+impl L1Details {
+    pub fn get_balance_threshold(&self) -> String {
+        match self {
+            L1Details::Solana(solana_config) => solana_config.balance_threshold.clone(),
+            L1Details::EVM(evmconfig) => evmconfig.balance_threshold.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct SolanaConfig {
     pub contract: String,
     pub rpc: String,
+    pub balance_threshold: String,
     pub solana_key_path: String,
     pub solana_password: String,
 }
@@ -48,6 +58,7 @@ pub struct SolanaConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct EVMConfig {
     pub contract: String,
+    pub balance_threshold: String,
     pub rpc: String,
     pub private_key: String,
 }

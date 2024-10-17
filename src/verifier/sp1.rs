@@ -1,12 +1,14 @@
-
-use std::fs;
+use std::fs::{self};
 
 use alloy_primitives::{Bytes, FixedBytes};
 use anyhow::{Error, Result};
 use hex::FromHex;
 use sp1_sdk::{ProverClient, SP1ProofWithPublicValues};
 
-use crate::{arbitrager::ELF_CONFIG, types::{PostParams, Sp1params, SupportedProvers}};
+use crate::{
+    arbitrager::ELF_CONFIG,
+    types::{PostParams, Sp1params, SupportedProvers},
+};
 
 use super::verifier::ProofTraits;
 
@@ -24,10 +26,10 @@ impl ProofTraits for SP1 {
                 let verifier_selector = "0xc865c1b6".to_string();
 
                 let final_proof = format!("{}{}", verifier_selector, prf);
-                let plonk_proof = Bytes::from_hex(final_proof).unwrap();
+                let plonk_proof = Bytes::from_hex(final_proof.clone()).unwrap();
 
                 let vk = FixedBytes::from_hex(
-                    "00156787defe36f107abff8e05d62b7f477a492b4459e41839ba5bee9d2ca807",
+                    "007179c0a44c9062ff1b8002febd5903d361f15d77f4fdc333012d106e957943",
                 )
                 .unwrap();
 
@@ -48,8 +50,8 @@ impl ProofTraits for SP1 {
 }
 
 pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
+    tracing::info!("Verifying sp1 proof");
     // Since we do not generate proof and just verify, this value should not matter though
-    std::env::set_var("SP1_PROVER", "mock");
     let client = ProverClient::new();
     let binding = ELF_CONFIG.read().unwrap();
 
@@ -57,14 +59,27 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
         .get(&SupportedProvers::SP1.to_string())
         .expect("Failed to get elf path");
     let elf = fs::read(elf_path).expect("Failed to read ELF file");
+
     let (_, vk) = client.setup(&elf);
 
+    let proof_file_path = "/Users/lilixac/twine/arbitrager/assets/proof.json".to_string();
+    let proof_file = fs::File::open(proof_file_path).unwrap();
+    let proof_object: Result<sp1_sdk::SP1ProofWithPublicValues, serde_json::Error> =
+        serde_json::from_reader(proof_file);
+    let prf = match proof_object {
+        Ok(proof) => proof,
+        Err(_) => todo!(),
+    };
 
-    match client.verify(&proof, &vk) {
+    // // let v = prf.proof.try_as_plonk().unwrap().plonk_vkey_hash.to_vec();
+    // // let x = hex::encode(v);
+
+    match client.verify(&prf, &vk) {
         Ok(_) => {
             tracing::info!("SP1 Proof locally verified!");
             let pub_values = proof.public_values.as_slice();
             let height: u64 = u64::from_be_bytes(pub_values[0..8].try_into().unwrap());
+            println!("Height: {}", height);
             Ok(height)
         }
         Err(_) => Err(Error::msg("failed to verify proof")),

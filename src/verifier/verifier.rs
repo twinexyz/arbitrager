@@ -32,7 +32,7 @@ impl Verifier {
             match proof {
                 ProofType::SP1Proof(sp1_proof_with_public_values, identifier) => {
                     match verify_sp1_proof(sp1_proof_with_public_values.clone()) {
-                        Ok(_) => {
+                        Ok(height) => {
                             tracing::info!("Proof verified. proof_type=sp1 client={}", identifier);
                             let raw_string =
                                 serde_json::to_string(&sp1_proof_with_public_values).unwrap();
@@ -42,7 +42,7 @@ impl Verifier {
                                 .save_proof_to_db(
                                     identifier,
                                     SupportedProvers::SP1,
-                                    365u64,
+                                    height,
                                     raw_string,
                                 )
                                 .await;

@@ -3,7 +3,7 @@ pub mod types;
 pub mod cmd;
 pub mod config;
 pub mod database;
-pub mod evm;
+pub mod chains;
 pub mod poster;
 pub mod balance_checker;
 pub mod json_rpc_server;
