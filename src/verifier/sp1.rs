@@ -20,16 +20,16 @@ impl ProofTraits for SP1 {
             Ok(proof) => {
                 let public_values = Bytes::copy_from_slice(proof.public_values.as_slice());
 
-                let prf = proof.clone().proof.try_as_plonk().unwrap().encoded_proof;
+                let prf = proof.clone().proof.try_as_groth_16().unwrap().encoded_proof;
 
                 // TODO: Handle versions dynamically
-                let verifier_selector = "0xc865c1b6".to_string();
+                let verifier_selector = "0x09069090".to_string();
 
                 let final_proof = format!("{}{}", verifier_selector, prf);
                 let plonk_proof = Bytes::from_hex(final_proof.clone()).unwrap();
 
                 let vk = FixedBytes::from_hex(
-                    "007179c0a44c9062ff1b8002febd5903d361f15d77f4fdc333012d106e957943",
+                    "00cc40b54ea20360aef4ad2a5665727179352b9cb7fb0df285468be78d71eff3",
                 )
                 .unwrap();
 
@@ -51,7 +51,6 @@ impl ProofTraits for SP1 {
 
 pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
     tracing::info!("Verifying sp1 proof");
-    // Since we do not generate proof and just verify, this value should not matter though
     let client = ProverClient::new();
     let binding = ELF_CONFIG.read().unwrap();
 
@@ -68,7 +67,6 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
             tracing::info!("SP1 Proof locally verified!");
             let pub_values = proof.public_values.as_slice();
             let height: u64 = u64::from_be_bytes(pub_values[0..8].try_into().unwrap());
-            println!("Height: {}", height);
             Ok(height)
         }
         Err(_) => Err(Error::msg("failed to verify proof")),

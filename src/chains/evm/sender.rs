@@ -77,8 +77,7 @@ impl EVMProvider {
             let pending_tx = self
                 .provider
                 .send_transaction(transaction.clone())
-                .await
-                .unwrap();
+                .await?;
             tracing::debug!("Pending transaction hash: {}", pending_tx.tx_hash());
             match pending_tx.get_receipt().await {
                 Ok(receipt) => {
