@@ -72,6 +72,7 @@ impl EVMProvider {
     pub async fn send_transaction(&self, transaction: TransactionRequest) -> Result<String> {
         loop {
             let pending_tx = self.provider.send_transaction(transaction.clone()).await?;
+
             tracing::debug!("Pending transaction hash: {}", pending_tx.tx_hash());
             match pending_tx.get_receipt().await {
                 Ok(receipt) => {

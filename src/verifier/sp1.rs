@@ -29,14 +29,14 @@ impl ProofTraits for SP1 {
                     .encoded_proof;
 
                 // TODO: Handle versions dynamically
-                let verifier_selector = "0xc865c1b6".to_string();
+                let verifier_selector = "0x09069090".to_string();
 
                 let final_proof = format!("{}{}", verifier_selector, prf);
                 let plonk_proof = Bytes::from_hex(final_proof.clone())?;
 
                 // Will not panic here
                 let vk = FixedBytes::from_hex(
-                    "007179c0a44c9062ff1b8002febd5903d361f15d77f4fdc333012d106e957943",
+                    "00cc40b54ea20360aef4ad2a5665727179352b9cb7fb0df285468be78d71eff3",
                 )
                 .unwrap();
 
@@ -58,7 +58,6 @@ impl ProofTraits for SP1 {
 
 pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
     tracing::info!("Verifying sp1 proof");
-    // Since we do not generate proof and just verify, this value should not matter though
     let client = ProverClient::new();
 
     // loaded with lazy static, should not fail
@@ -76,8 +75,8 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
         Ok(_) => {
             tracing::info!("SP1 Proof locally verified!");
             let pub_values = proof.public_values.as_slice();
-            let height: u64 = u64::from_be_bytes(pub_values[0..8].try_into()?);
-            println!("Height: {}", height);
+            let height: u64 = u64::from_be_bytes(pub_values[0..8].try_into().unwrap());
+
             Ok(height)
         }
         Err(e) => Err(e.into()),

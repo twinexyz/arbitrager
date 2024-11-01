@@ -92,7 +92,6 @@ impl DB {
                     );
                 }
                 None => {
-                    println!("ready to post ya, know!");
                     let mut poster_1 = HashMap::new();
                     poster_1.insert(chain.clone(), posted);
                     let mut l1s = HashMap::new();
