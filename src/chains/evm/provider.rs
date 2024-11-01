@@ -45,7 +45,6 @@ pub type AlloyProvider = FillProvider<
     alloy::network::Ethereum,
 >;
 
-
 impl EVMProviderConfig {
     pub fn new(rpc_url: String, private_key: String, contract_address: String) -> Self {
         let contract = Address::from_str(contract_address.trim_start_matches("0x"))
