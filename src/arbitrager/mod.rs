@@ -12,6 +12,7 @@ use crate::{
     chains::chains::{make_providers, ChainProviders},
     config::Config,
     database::db::DB,
+    error::ArbitragerError,
     json_rpc_server::server::JsonRpcServer,
     poster::poster::Poster,
     types::make_threshold_map,
@@ -69,11 +70,14 @@ pub async fn run(cfg: Config) -> Result<()> {
         proof_receiver
             .run_server(port)
             .await
-            .expect("Failed to start server");
+            .map_err(|e| ArbitragerError::JsonRPCServerError(e.to_string()))
     });
 
     let validator_task = task::spawn(async move {
-        verifier.run().await.expect("Failed to run validator");
+        verifier
+            .run()
+            .await
+            .map_err(|e| ArbitragerError::Custom(e.to_string()))
     });
 
     let db_clone = Arc::clone(&db_arc);
@@ -81,21 +85,21 @@ pub async fn run(cfg: Config) -> Result<()> {
         db_clone
             .run(post_status_rx)
             .await
-            .expect("Failed to run db service");
+            .map_err(|e| ArbitragerError::DBError(e.to_string()))
     });
 
     let poster_task = task::spawn(async move {
         poster
             .run(poster_rx)
             .await
-            .expect("Failed to run validator");
+            .map_err(|e| ArbitragerError::PosterError(e.to_string()))
     });
 
     let balance_check_task = task::spawn(async move {
         balance_checker
             .run()
             .await
-            .expect("Failed to run validator");
+            .expect("Failed to run balance checker");
     });
 
     let _ = tokio::try_join!(

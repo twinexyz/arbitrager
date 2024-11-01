@@ -13,7 +13,7 @@ Twine arbitrager aggregates proofs from the provers for twine node. When k out o
 2. Run the arbitrager as
     ```sh
     cargo build --release
-    cargo run --release run --config config.yaml
+    cargo run --release -- --config config.yaml run
     ```
 
     > Release flag is needed for sp1 verification.

@@ -13,6 +13,10 @@ use super::{
 
 pub trait BalanceProvider {
     fn query_balance(&self) -> impl std::future::Future<Output = Result<U256>> + Send;
+    fn balance_under_threshold(
+        &self,
+        threshold: U256,
+    ) -> impl std::future::Future<Output = Result<(bool, U256)>> + Send;
 }
 
 pub trait ProofSubmitter {
@@ -44,7 +48,21 @@ impl BalanceProvider for ChainProviders {
         match self {
             ChainProviders::EVM(evm_provider) => evm_provider.query_balance().await,
             ChainProviders::SVM(solana_provider) => solana_provider.query_balance().await,
-            ChainProviders::DummyVM(dp) => dp.query_balance().await
+            ChainProviders::DummyVM(dp) => dp.query_balance().await,
+        }
+    }
+
+    async fn balance_under_threshold(&self, threshold: U256) -> Result<(bool, U256)> {
+        match self {
+            ChainProviders::EVM(evmprovider) => {
+                evmprovider.balance_under_threshold(threshold).await
+            }
+            ChainProviders::SVM(solana_provider) => {
+                solana_provider.balance_under_threshold(threshold).await
+            }
+            ChainProviders::DummyVM(dummy_provider) => {
+                dummy_provider.balance_under_threshold(threshold).await
+            }
         }
     }
 }
