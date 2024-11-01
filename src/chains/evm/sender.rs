@@ -3,11 +3,7 @@ use std::time::Duration;
 use crate::{chains::chains::ProofSubmitter, types::PostParams};
 
 use super::provider::EVMProvider;
-use alloy::{
-    network::TransactionBuilder,
-    rpc::types::TransactionRequest,
-    sol,
-};
+use alloy::{network::TransactionBuilder, rpc::types::TransactionRequest, sol};
 use alloy_provider::Provider;
 use anyhow::Result;
 use tokio::time::sleep;
@@ -74,11 +70,7 @@ impl EVMProvider {
     /// If failed, it tries to do the transaction again, waiting for 15 seconds. This runs in infinite loop.
     pub async fn send_transaction(&self, transaction: TransactionRequest) -> Result<String> {
         loop {
-            let pending_tx = self
-                .provider
-                .send_transaction(transaction.clone())
-                .await
-                .unwrap();
+            let pending_tx = self.provider.send_transaction(transaction.clone()).await?;
             tracing::debug!("Pending transaction hash: {}", pending_tx.tx_hash());
             match pending_tx.get_receipt().await {
                 Ok(receipt) => {

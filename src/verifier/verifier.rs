@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub trait ProofTraits {
-    fn process_proof(proof: String, blocku64: u64) -> Option<PostParams>;
+    fn process_proof(proof: String, blocku64: u64) -> Result<PostParams>;
 }
 
 pub struct Verifier {
@@ -34,8 +34,7 @@ impl Verifier {
                     match verify_sp1_proof(sp1_proof_with_public_values.clone()) {
                         Ok(height) => {
                             tracing::info!("Proof verified. proof_type=sp1 client={}", identifier);
-                            let raw_string =
-                                serde_json::to_string(&sp1_proof_with_public_values).unwrap();
+                            let raw_string = serde_json::to_string(&sp1_proof_with_public_values)?;
 
                             let _ = self
                                 .db

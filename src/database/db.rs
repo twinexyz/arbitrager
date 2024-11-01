@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use futures::stream::StreamExt;
 use mongodb::{
     bson::{self, doc, Bson, DateTime},
@@ -9,12 +9,12 @@ use mongodb::{
 use tokio::sync::mpsc::{Receiver, Sender};
 use tracing::info_span;
 
-use crate::verifier::sp1::SP1;
 use crate::verifier::verifier::ProofTraits;
 use crate::{
     poster::poster::PostStatus,
     types::{DummyParams, PostParams, SupportedProvers},
 };
+use crate::{verifier::sp1::SP1, MAX_RETRIES};
 
 use super::schema::{BlockFields, L1Details, ProofDetails, ProverDetails};
 
@@ -23,7 +23,7 @@ static PROOF_COLLECTION_NAME: &str = "proof_collection";
 static POSTER_COLLECTION_NAME: &str = "l1s_collection";
 
 async fn connect_to_mongodb(uri: &str) -> mongodb::error::Result<Database> {
-    let client = Client::with_uri_str(uri).await.unwrap();
+    let client = Client::with_uri_str(uri).await?;
     let database = client.database(DB_NAME);
     Ok(database)
 }
@@ -44,10 +44,6 @@ impl DB {
                 panic!("Failed to connect to database");
             }
         };
-
-        if threshold < 1 {
-            eprintln!("Threshold cannot be less than 1");
-        }
 
         let proof_collection: Collection<ProofDetails> = database.collection(PROOF_COLLECTION_NAME);
         let l1_collection: Collection<L1Details> = database.collection(POSTER_COLLECTION_NAME);
@@ -87,7 +83,7 @@ impl DB {
                             format!("l1s.{}", block): bson::to_bson(&doc.l1s)?,
                         }
                     };
-                    self.l1_collection.update_one(filter, update).await.unwrap();
+                    self.l1_collection.update_one(filter, update).await?;
 
                     tracing::info!(
                         "Proof post result added in db for chain:{} block:{}",
@@ -103,7 +99,7 @@ impl DB {
                     l1s.insert(block.clone(), poster_1);
 
                     let final_struct = L1Details { l1s };
-                    let res = self.l1_collection.insert_one(final_struct).await.unwrap();
+                    let res = self.l1_collection.insert_one(final_struct).await?;
                     tracing::info!(
                         "Proof post result inserted to db at id: {} chain:{} height:{}",
                         res.inserted_id,
@@ -117,7 +113,7 @@ impl DB {
     }
 
     /// Get the first proof that was submitted to db for the block.
-    pub async fn find_oldest_proof(&self, block: String) -> Option<ProverDetails> {
+    pub async fn find_oldest_proof(&self, block: String) -> Result<ProverDetails> {
         let pipeline = vec![
             doc! {
                 "$match": doc! {
@@ -148,7 +144,7 @@ impl DB {
             },
         ];
 
-        let mut cursor = self.proof_collection.aggregate(pipeline).await.unwrap();
+        let mut cursor = self.proof_collection.aggregate(pipeline).await?;
 
         while let Some(doc) = cursor.next().await {
             if let Ok(document) = doc {
@@ -158,13 +154,13 @@ impl DB {
                     .and_then(|pd| pd.get("v").and_then(|v| v.as_document()))
                 {
                     let prover_details: ProverDetails =
-                        bson::from_bson(Bson::Document(prover_detail_bson.clone())).unwrap();
+                        bson::from_bson(Bson::Document(prover_detail_bson.clone()))?;
 
-                    return Some(prover_details);
+                    return Ok(prover_details);
                 }
             }
         }
-        None
+        Err(Error::msg("Failed to fetch proofs"))
     }
 
     /// Should only arrive at this function ONLY IF the proof has been verified.
@@ -177,9 +173,8 @@ impl DB {
         block: u64,
         proof: String,
     ) -> Result<()> {
-        let blocku64 = block;
-        let block = block.to_string();
-        let filter = doc! { format!("blocks.{}", block): { "$exists": true } };
+        let block_str = block.to_string();
+        let filter = doc! { format!("blocks.{}", block_str): { "$exists": true } };
 
         match self.proof_collection.find_one(filter.clone()).await? {
             Some(existing_block_details) => {
@@ -193,13 +188,15 @@ impl DB {
                     timestamp: DateTime::now(),
                 };
 
-                let block_fields = blocks.get_mut(&block.to_string()).unwrap();
+                let block_fields = blocks
+                    .get_mut(&block_str)
+                    .ok_or_else(|| Error::msg("Block fields missing"))?;
 
                 let threshold_was_verified = block_fields.threshold_verified;
                 if block_fields.prover_details.contains_key(&identifier) {
                     tracing::info!(
                         "Proof already submitted height:{} identifier:{}",
-                        block,
+                        block_str,
                         identifier
                     );
                     return Ok(());
@@ -214,39 +211,50 @@ impl DB {
 
                 let update = doc! {
                     "$set": {
-                        format!("blocks.{}.prover_details", block): bson::to_bson(&block_fields.prover_details)?,
-                        format!("blocks.{}.threshold_verified", block): threshold_verified,
-                        format!("blocks.{}.timestamp", block): block_fields.timestamp,
+                        format!("blocks.{}.prover_details", block_str): bson::to_bson(&block_fields.prover_details)?,
+                        format!("blocks.{}.threshold_verified", block_str): threshold_verified,
+                        format!("blocks.{}.timestamp", block_str): block_fields.timestamp,
                     }
                 };
 
-                self.proof_collection
-                    .update_one(filter, update)
-                    .await
-                    .unwrap();
+                self.proof_collection.update_one(filter, update).await?;
                 tracing::info!(
                     "Proof updated in db for block: {} identifier:{}",
-                    block.clone(),
+                    block_str.clone(),
                     identifier
                 );
                 if !threshold_was_verified {
-                    let proof: ProverDetails = self.find_oldest_proof(block.clone()).await.unwrap();
+                    let proof: ProverDetails;
+                    let mut count = 1;
+                    loop {
+                        match self.find_oldest_proof(block_str.clone()).await {
+                            Ok(p) => {
+                                proof = p;
+                                break;
+                            }
+                            Err(e) => {
+                                if count > MAX_RETRIES {
+                                    return Err(e);
+                                }
+                                count += 1;
+                            }
+                        }
+                    }
 
                     // Notify Poster It's ready to send proof for the block
                     if threshold_verified {
-                        let blocku64: u64 = block.parse().unwrap();
-                        tracing::info!("Threshold verified for block: {}", block);
-                        let params = match SupportedProvers::from_str(&proof.proof_type).unwrap() {
-                            SupportedProvers::SP1 => SP1::process_proof(proof.proof, blocku64),
+                        tracing::info!("Threshold verified for block: {}", block_str);
+                        let params = match SupportedProvers::from_str(&proof.proof_type)? {
+                            SupportedProvers::SP1 => SP1::process_proof(proof.proof, block),
                             SupportedProvers::RISC0 => todo!(),
                             SupportedProvers::Dummy => {
-                                let proof_bytes = hex::decode(proof.proof).unwrap();
+                                let proof_bytes = hex::decode(proof.proof)?;
                                 let params_inner = DummyParams { proof: proof_bytes };
-                                Some(PostParams::Dummy(params_inner, block.parse().unwrap()))
+                                Ok(PostParams::Dummy(params_inner, block))
                             }
                         };
-                        if let Some(ref param) = params {
-                            self.poster_tx.send(param.clone()).await.unwrap();
+                        if let Ok(ref param) = params {
+                            self.poster_tx.send(param.clone()).await?;
                         }
                     }
                 }
@@ -271,36 +279,32 @@ impl DB {
                 };
 
                 let mut blocks = HashMap::new();
-                blocks.insert(block.clone(), block_fields);
+                blocks.insert(block_str.clone(), block_fields);
 
                 let final_struct = ProofDetails { blocks };
 
                 // required structure is now ready
                 tracing::info!("Ready to post to db");
-                let res = self
-                    .proof_collection
-                    .insert_one(final_struct)
-                    .await
-                    .unwrap();
+                let res = self.proof_collection.insert_one(final_struct).await?;
                 tracing::info!(
                     "Proof inserted to db at id: {} height:{} identifier:{}",
                     res.inserted_id,
-                    block,
+                    block_str,
                     identifier
                 );
 
                 if threshold_verified {
                     let params = match prover_type {
-                        SupportedProvers::SP1 => SP1::process_proof(proof, blocku64),
+                        SupportedProvers::SP1 => SP1::process_proof(proof, block),
                         SupportedProvers::RISC0 => todo!(),
                         SupportedProvers::Dummy => {
-                            let proof_bytes = hex::decode(proof).unwrap();
+                            let proof_bytes = hex::decode(proof)?;
                             let params_inner = DummyParams { proof: proof_bytes };
-                            Some(PostParams::Dummy(params_inner, block.parse().unwrap()))
+                            Ok(PostParams::Dummy(params_inner, block_str.parse()?))
                         }
                     };
-                    if let Some(ref param) = params {
-                        self.poster_tx.send(param.clone()).await.unwrap();
+                    if let Ok(ref param) = params {
+                        self.poster_tx.send(param.clone()).await?;
                     }
                 }
             }
