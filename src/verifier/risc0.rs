@@ -1,10 +1,10 @@
-
 use super::verifier::ProofTraits;
+use anyhow::Result;
 
 pub struct RISC0;
 
 impl ProofTraits for RISC0 {
-    fn process_proof(proof: String, blocku64: u64) -> Option<crate::types::PostParams> {
+    fn process_proof(proof: String, blocku64: u64) -> Result<crate::types::PostParams> {
         todo!()
     }
 }

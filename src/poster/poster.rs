@@ -63,48 +63,6 @@ impl Poster {
                         tracing::error!("Fail to submit proof. chain:{}", chain);
                     }
                 }
-                // match provider {
-                //     ChainProviders::EVM(evmprovider) => {
-                //         match evmprovider.submit_proof(data_clone.clone()).await {
-                //             Ok(_) => {
-                //                 tracing::info!("Proof submitted. chain:{}", chain);
-                //                 let post_status = match data_clone {
-                //                     PostParams::RiscZero(_risc0_params, _) => todo!(),
-                //                     PostParams::Sp1(_sp1params, block) => PostStatus {
-                //                         chain: chain.clone().to_string(),
-                //                         block,
-                //                         posted: true,
-                //                     },
-                //                     PostParams::Dummy(_dummy_params, _) => todo!(),
-                //                 };
-                //                 info!("Post status received. Sending status to post_status channel");
-                //                 self.post_status_tx.send(post_status).await.unwrap();
-                //             }
-                //             Err(_) => {
-                //                 tracing::error!("Fail to submit proof. chain:{}", chain);
-                //             }
-                //         }
-                //     }
-                //     ChainProviders::SVM() => {
-                //         tracing::info!("SVM provider is not yet implemented. chain:{}", chain);
-                //         todo!();
-                //     }
-                //     ChainProviders::DummyVM() => {
-                //         tracing::info!("Proof submitted to dummy verifier. chain:{}", chain);
-                //         let data_clone = data.clone();
-                //         let post_status = match data_clone {
-                //             PostParams::RiscZero(risc0_params, _) => todo!(),
-                //             PostParams::Sp1(sp1params, _) => todo!(),
-                //             PostParams::Dummy(dummy_params, block) => PostStatus {
-                //                 chain: chain.to_string(),
-                //                 block,
-                //                 posted: true,
-                //             },
-                //         };
-
-                //         self.post_status_tx.send(post_status).await.unwrap();
-                //     }
-                // }
             }
         }
         Ok(())
