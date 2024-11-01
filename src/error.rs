@@ -5,6 +5,10 @@ pub enum ArbitragerError {
     VerificationFailed,
     ProofParsingFailed,
     InvalidSender(String),
+    JsonRPCServerError(String),
+    DBError(String),
+    SubmitTransactionFailed(String),
+    PosterError(String),
     Custom(String),
 }
 
@@ -19,6 +23,10 @@ impl std::fmt::Display for ArbitragerError {
             ArbitragerError::Custom(e) => write!(f, "{e}"),
             ArbitragerError::InvalidSender(e) => write!(f, "Invalid sender: {e}"),
             ArbitragerError::ProofParsingFailed => write!(f, "Failed to parse proof"),
+            ArbitragerError::JsonRPCServerError(e) => write!(f, "{e:?}"),
+            ArbitragerError::SubmitTransactionFailed(e) => write!(f, "{e:?}"),
+            ArbitragerError::DBError(e) => write!(f, "{e:?}"),
+            ArbitragerError::PosterError(e) => write!(f, "{e:?}"),
         }
     }
 }

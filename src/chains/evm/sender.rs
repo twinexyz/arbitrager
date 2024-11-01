@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{chains::chains::ProofSubmitter, types::PostParams};
+use crate::{chains::chains::ProofSubmitter, error::ArbitragerError, types::PostParams};
 
 use super::provider::EVMProvider;
 use alloy::{network::TransactionBuilder, rpc::types::TransactionRequest, sol};
@@ -52,6 +52,7 @@ impl ProofSubmitter for EVMProvider {
                             block,
                             e.to_string()
                         );
+                        return Err(ArbitragerError::SubmitTransactionFailed(e.to_string()).into());
                     }
                 }
             }
