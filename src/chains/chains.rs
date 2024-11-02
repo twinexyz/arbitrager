@@ -44,7 +44,7 @@ impl BalanceProvider for ChainProviders {
         match self {
             ChainProviders::EVM(evm_provider) => evm_provider.query_balance().await,
             ChainProviders::SVM(solana_provider) => solana_provider.query_balance().await,
-            ChainProviders::DummyVM(dp) => dp.query_balance().await
+            ChainProviders::DummyVM(dp) => dp.query_balance().await,
         }
     }
 }

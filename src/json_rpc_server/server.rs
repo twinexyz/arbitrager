@@ -61,13 +61,13 @@ impl JsonRpcServer {
                 async move {
                     let proof: ProofTypes = params.one().unwrap();
                     match proof {
-                        ProofTypes::RISC0Proof { ..} => {
+                        ProofTypes::RISC0Proof { .. } => {
                             panic!("Unimplemented!")
                         }
-                        ProofTypes::SP1Proof { proof , identifier} => {
+                        ProofTypes::SP1Proof { proof, identifier } => {
                             server_handle.handle_sp1_proof(proof, identifier).await;
                         }
-                        ProofTypes::Dummy { proof , identifier} => {
+                        ProofTypes::Dummy { proof, identifier } => {
                             server_handle.handle_dummy_proof(proof, identifier).await;
                         }
                     }
@@ -86,7 +86,7 @@ impl JsonRpcServer {
         Ok(())
     }
 
-    async fn handle_sp1_proof(&self, proof: SP1ProofWithPublicValues, identifier: String)  {
+    async fn handle_sp1_proof(&self, proof: SP1ProofWithPublicValues, identifier: String) {
         if !self.valid_senders.contains_key(&identifier) {
             tracing::error!("Invalid sender. Identifier:{}", identifier);
             return;
