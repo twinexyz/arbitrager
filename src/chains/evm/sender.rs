@@ -3,26 +3,18 @@ use std::time::Duration;
 use crate::{chains::chains::ProofSubmitter, types::PostParams};
 
 use super::provider::EVMProvider;
-use alloy::{
-    network::TransactionBuilder,
-    rpc::types::TransactionRequest,
-    sol,
-};
+use alloy::{rpc::types::TransactionRequest, sol};
+use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;
 use tokio::time::sleep;
 
 sol! {
     #[sol(rpc)]
-    contract SP1PlonkVerifier {
-        constructor(address) {}
+    contract TwineChain {
 
         #[derive(Debug)]
-        function verifyProof(
-            bytes32 programVKey,
-            bytes calldata publicValues,
-            bytes calldata proofBytes
-        ) external;
+        function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external;
     }
 }
 
@@ -31,15 +23,12 @@ impl ProofSubmitter for EVMProvider {
         match params {
             PostParams::RiscZero(evm_risc0_params, block) => todo!(),
             PostParams::Sp1(sp1_params, block) => {
-                let contract =
-                    SP1PlonkVerifier::new(self.config.contract_address, self.provider.clone());
-
-                let vk = sp1_params.vk;
-                let public_values = sp1_params.public_values;
+                let contract = TwineChain::new(self.config.contract_address, self.provider.clone());
 
                 let plonk_proof = sp1_params.plonk_proof;
+                let block = U256::from(block);
 
-                let tx_data = contract.verifyProof(vk, public_values.clone(), plonk_proof.clone());
+                let tx_data = contract.finalizeBatch(block, plonk_proof.clone());
 
                 let tx_req = tx_data
                     .max_fee_per_gas(200000000000000)
@@ -74,10 +63,7 @@ impl EVMProvider {
     /// If failed, it tries to do the transaction again, waiting for 15 seconds. This runs in infinite loop.
     pub async fn send_transaction(&self, transaction: TransactionRequest) -> Result<String> {
         loop {
-            let pending_tx = self
-                .provider
-                .send_transaction(transaction.clone())
-                .await?;
+            let pending_tx = self.provider.send_transaction(transaction.clone()).await?;
             tracing::debug!("Pending transaction hash: {}", pending_tx.tx_hash());
             match pending_tx.get_receipt().await {
                 Ok(receipt) => {
