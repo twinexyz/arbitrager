@@ -1,4 +1,3 @@
-
 use super::verifier::ProofTraits;
 
 pub struct RISC0;

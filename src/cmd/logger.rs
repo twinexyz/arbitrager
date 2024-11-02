@@ -2,7 +2,6 @@ use tracing::Level;
 use tracing_subscriber::EnvFilter;
 
 pub fn logging(level: &String) {
-    
     let log_level = match level.as_str() {
         "trace" => Level::TRACE,
         "debug" => Level::DEBUG,

@@ -17,8 +17,6 @@ pub enum ProofType {
     Dummy(Vec<u8>, String),
 }
 
-
-
 #[derive(Serialize, Deserialize, Clone)]
 pub enum PostParams {
     RiscZero(Risc0Params, u64),
@@ -73,4 +71,3 @@ pub fn make_threshold_map(l1s: HashMap<String, L1Details>) -> HashMap<String, St
         .map(|(key, detail)| (key.to_string(), detail.get_balance_threshold()))
         .collect()
 }
-

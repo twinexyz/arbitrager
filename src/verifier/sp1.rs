@@ -61,7 +61,6 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
 
     let (_, vk) = client.setup(&elf);
 
-
     match client.verify(&proof, &vk) {
         Ok(_) => {
             tracing::info!("SP1 Proof locally verified!");

@@ -78,7 +78,7 @@ impl Config {
         }
 
         // Ensure ELF File exists
-        for (_, v) in &self.elf {
+        for v in self.elf.values() {
             if !v.is_empty() && !check_directory_exists(v) {
                 return Err(Error::msg(
                     format!("{} elf file does not exist", v).to_string(),
@@ -86,7 +86,7 @@ impl Config {
             }
         }
 
-        for (_, value) in &self.provers {
+        for value in self.provers.values() {
             if !is_valid_url(&value.prover_ip) {
                 return Err(Error::msg("prover grpc_server must be valid url"));
             }
