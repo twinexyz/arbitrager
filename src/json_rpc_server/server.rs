@@ -59,10 +59,18 @@ impl JsonRpcServer {
             .register_async_method("twarb_sendProof", move |params, _ctx, _| {
                 let server_handle = server_handle.clone();
                 async move {
-                    let proof: ProofTypes = params.one().unwrap();
+                    let proof: ProofTypes = match params.one() {
+                        Ok(p) => p,
+                        Err(e) => {
+                            return ServerReturnType::Failure(format!(
+                                "Failed deserializing proof: {e:?}"
+                            ));
+                        }
+                    };
                     match proof {
                         ProofTypes::RISC0Proof { .. } => {
-                            panic!("Unimplemented!")
+                            tracing::info!("RISC0 Proof not supported at the moment");
+                            ServerReturnType::Failure("Not supported".to_string())
                         }
                         ProofTypes::SP1Proof { proof, identifier } => {
                             match server_handle.handle_sp1_proof(proof, identifier).await {
