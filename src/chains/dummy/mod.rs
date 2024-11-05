@@ -10,7 +10,7 @@ impl BalanceProvider for DummyProvider {
         todo!()
     }
 
-    async fn balance_under_threshold(&self, threshold: U256) -> Result<(bool, U256)> {
+    async fn balance_under_threshold(&self, threshold: U256) -> Result<(bool, String)> {
         todo!()
     }
 }

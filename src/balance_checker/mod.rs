@@ -37,13 +37,15 @@ impl BalanceChecker {
                     .balance_under_threshold(threshold_balance.get_absolute())
                     .await
                 {
-                    Ok((_, balance)) => {
-                        tracing::warn!(
-                            "Balance under threshold! chain:{} balance:{} eth",
-                            chain,
-                            balance
-                        );
-                        // webhook
+                    Ok((under_threshold, balance)) => {
+                        if under_threshold {
+                            tracing::warn!(
+                                "Balance under threshold! chain:{} balance:{}",
+                                chain,
+                                balance
+                            );
+                            // webhook
+                        }
                     }
                     Err(e) => {
                         tracing::warn!("Failed to query balance. chain:{} error:{}", chain, e);
