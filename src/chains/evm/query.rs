@@ -14,8 +14,7 @@ impl BalanceProvider for EVMProvider {
 
     async fn balance_under_threshold(&self, threshold: U256) -> Result<(bool, String)> {
         let balance = self.query_balance().await?;
-        let eth_balance =
-                    format_units(balance, "eth")?;
+        let eth_balance = format_units(balance, "eth")?;
         Ok((balance.lt(&threshold), format!("{eth_balance} eth")))
     }
 }

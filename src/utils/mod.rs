@@ -1,5 +1,5 @@
-use std::path::Path;
 use regex::Regex;
+use std::path::Path;
 
 pub fn is_valid_url(url: &str) -> bool {
     let url_regex = Regex::new(r"^(http|https)://[^\s/$.?#].[^\s]*$").unwrap();

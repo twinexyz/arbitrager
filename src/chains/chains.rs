@@ -14,7 +14,7 @@ use super::{
 pub trait BalanceProvider {
     fn query_balance(&self) -> impl std::future::Future<Output = Result<U256>> + Send;
 
-    /// return units as well 
+    /// return units as well
     /// "example: Ok(true,123.00eth)"
     fn balance_under_threshold(
         &self,
