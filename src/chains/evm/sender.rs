@@ -35,6 +35,7 @@ impl ProofSubmitter for EVMProvider {
                     .max_priority_fee_per_gas(2000000)
                     .into_transaction_request();
 
+                // handle nonce error, gas error correctly
                 match self.send_transaction(tx_req).await {
                     Ok(_) => {
                         tracing::info!("Posted sp1 proof for block:{}", block);
