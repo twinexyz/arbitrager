@@ -1,4 +1,13 @@
-use crate::{arbitrager::run, config::Config};
+use crate::{
+    arbitrager::run,
+    chains::{
+        chains::ProofSubmitter,
+        evm::provider::{EVMProvider, EVMProviderConfig},
+    },
+    config::Config,
+    types::SupportedProvers,
+    verifier::{dummy::Dummy, risc0::RISC0, sp1::SP1, verifier::ProofTraits},
+};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::{
@@ -29,6 +38,19 @@ pub enum Commands {
     Run,
     Show,
     DeleteDB,
+    ManualRelay {
+        #[arg(short, long)]
+        height: u64,
+
+        #[arg(short, long)]
+        chain: String,
+
+        #[arg(short, long)]
+        proof_type: String,
+
+        #[arg(short, long)]
+        proof_json: PathBuf,
+    },
 }
 
 fn default_config_path() -> PathBuf {
@@ -72,6 +94,53 @@ pub async fn init() -> Result<()> {
         Commands::Run => handle_run_command(cfg).await,
         Commands::Show => handle_show_command(cfg),
         Commands::DeleteDB => todo!(),
+        Commands::ManualRelay {
+            height,
+            chain,
+            proof_type,
+            proof_json,
+        } => Ok(manual_proof_relay(cfg, height, chain, proof_type, proof_json).await),
+    }
+}
+
+// for manual relaying, so unwrap/expect is okay
+pub async fn manual_proof_relay(
+    cfg: Config,
+    height: &u64,
+    chain: &String,
+    proof_type: &String,
+    proof_json: &PathBuf,
+) {
+    let l2_chains = cfg.l1s;
+    let proof_string =
+        std::fs::read_to_string(proof_json).expect("Failed to read proof file as string");
+    let destination = l2_chains.get(chain).expect("Invalid chain name");
+    match destination {
+        crate::config::L1Details::Solana(solana_config) => todo!(),
+        crate::config::L1Details::EVM(evmconfig) => {
+            let provider_config = EVMProviderConfig::new(
+                evmconfig.rpc.clone(),
+                evmconfig.private_key.clone(),
+                evmconfig.contract.clone(),
+            );
+            let provider = EVMProvider::new(provider_config);
+            let post_params =
+                match SupportedProvers::from_str(&proof_type).expect("Invalid proof type") {
+                    SupportedProvers::SP1 => SP1::process_proof(proof_string, height.clone()),
+                    SupportedProvers::RISC0 => RISC0::process_proof(proof_string, height.clone()),
+                    SupportedProvers::Dummy => Dummy::process_proof(proof_string, height.clone()),
+                }
+                .expect("Failed to construct proof params");
+
+            match provider.submit_proof(post_params).await {
+                Ok(_) => {
+                    println!("Transaction successful ");
+                }
+                Err(e) => {
+                    println!("Transaction failed! {e:?}");
+                }
+            }
+        }
     }
 }
 

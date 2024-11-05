@@ -111,6 +111,7 @@ impl JsonRpcServer {
         proof: SP1ProofWithPublicValues,
         identifier: String,
     ) -> Result<()> {
+
         if !self.valid_senders.contains_key(&identifier) {
             tracing::error!("Invalid sender. Identifier:{}", identifier);
             return Err(ArbitragerError::InvalidSender(identifier).into());

@@ -4,6 +4,7 @@ use crate::{chains::chains::ProofSubmitter, types::PostParams};
 
 use super::provider::EVMProvider;
 use alloy::{network::TransactionBuilder, rpc::types::TransactionRequest, sol};
+
 use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;

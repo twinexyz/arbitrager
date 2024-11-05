@@ -66,6 +66,7 @@ impl BalanceProvider for ChainProviders {
             ChainProviders::DummyVM(dummy_provider) => {
                 dummy_provider.balance_under_threshold(threshold).await
             }
+
         }
     }
 }
