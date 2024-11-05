@@ -63,7 +63,12 @@ impl Verifier {
                     let proof_string = hex::encode(&vec);
                     let _ = self
                         .db
-                        .save_proof_to_db(identifier, SupportedProvers::Dummy, 33u64, proof_string)
+                        .save_proof_to_db(
+                            identifier,
+                            SupportedProvers::Dummy,
+                            vec[1] as u64,
+                            proof_string,
+                        )
                         .await;
                 }
             }

@@ -24,7 +24,7 @@ impl ProofTraits for SP1 {
                 let prf = proof
                     .clone()
                     .proof
-                    .try_as_plonk()
+                    .try_as_groth_16()
                     .ok_or(ArbitragerError::ProofParsingFailed)?
                     .encoded_proof;
 
@@ -75,10 +75,35 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
         Ok(_) => {
             tracing::info!("SP1 Proof locally verified!");
             let pub_values = proof.public_values.as_slice();
-            let height: u64 = u64::from_be_bytes(pub_values[0..8].try_into().unwrap());
-
+            let height: u64 = u64::from_be_bytes(pub_values[0..8].try_into()?);
             Ok(height)
         }
         Err(e) => Err(e.into()),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::{fs::File, io::BufReader};
+
+    use sp1_sdk::{ProverClient, SP1ProofWithPublicValues};
+
+    #[test]
+    fn test_verify_sp1_proof() {
+        let client = ProverClient::new();
+        let elf = include_bytes!("../../assets/elf/riscv32im-succinct-zkvm-elf");
+        // Initialize the prover client.
+        let client = ProverClient::new();
+
+        // Setup the program.
+        let (pk, vk) = client.setup(elf);
+        let file = File::open("./assets/proof.json").expect("Proof File not found!");
+
+        println!("{file:?}");
+        let reader = BufReader::new(file);
+        let proof: SP1ProofWithPublicValues = serde_json::from_reader(reader).unwrap();
+
+        let result = client.verify(&proof, &vk);
+        assert!(result.is_ok());
     }
 }

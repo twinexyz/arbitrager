@@ -1,24 +1,20 @@
 use std::time::Duration;
 
-use crate::{chains::chains::ProofSubmitter, error::ArbitragerError, types::PostParams};
+use crate::{chains::chains::ProofSubmitter, types::PostParams};
 
 use super::provider::EVMProvider;
 use alloy::{network::TransactionBuilder, rpc::types::TransactionRequest, sol};
+use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;
 use tokio::time::sleep;
 
 sol! {
     #[sol(rpc)]
-    contract SP1PlonkVerifier {
-        constructor(address) {}
+    contract TwineChain {
 
         #[derive(Debug)]
-        function verifyProof(
-            bytes32 programVKey,
-            bytes calldata publicValues,
-            bytes calldata proofBytes
-        ) external;
+        function finalizeBatch(uint256 batchNumber, bytes calldata _proofBytes) external;
     }
 }
 
@@ -27,21 +23,19 @@ impl ProofSubmitter for EVMProvider {
         match params {
             PostParams::RiscZero(evm_risc0_params, block) => todo!(),
             PostParams::Sp1(sp1_params, block) => {
-                let contract =
-                    SP1PlonkVerifier::new(self.config.contract_address, self.provider.clone());
-
-                let vk = sp1_params.vk;
-                let public_values = sp1_params.public_values;
+                let contract = TwineChain::new(self.config.contract_address, self.provider.clone());
 
                 let plonk_proof = sp1_params.plonk_proof;
+                let block = U256::from(block);
 
-                let tx_data = contract.verifyProof(vk, public_values.clone(), plonk_proof.clone());
+                let tx_data = contract.finalizeBatch(block, plonk_proof.clone());
 
                 let tx_req = tx_data
                     .max_fee_per_gas(200000000000000)
                     .max_priority_fee_per_gas(2000000)
                     .into_transaction_request();
 
+                // handle nonce error, gas error correctly
                 match self.send_transaction(tx_req).await {
                     Ok(_) => {
                         tracing::info!("Posted sp1 proof for block:{}", block);
@@ -52,11 +46,12 @@ impl ProofSubmitter for EVMProvider {
                             block,
                             e.to_string()
                         );
-                        return Err(ArbitragerError::SubmitTransactionFailed(e.to_string()).into());
                     }
                 }
             }
-            PostParams::Dummy(dummy_params, _) => todo!(),
+            PostParams::Dummy(dummy_params, _) => {
+                tracing::warn!("Dummy chain: Mock txn submission successful");
+            }
         }
         Ok(())
     }
