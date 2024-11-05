@@ -4,6 +4,8 @@ Twine arbitrager aggregates proofs from the provers for twine node. When k out o
 
 ![Twine Arbitrager Architecture](./assets/image.png)
 
+> Note: Ensure docker is installed and is running. It's used to verify the proof. On the first proof verification, the required docker image should download automatically.
+
 ## Run Arbitrager
 1. Generate config based on config.yaml.
     > Note: You might have to give network access to mongodb atlas if you're using one.
@@ -13,7 +15,7 @@ Twine arbitrager aggregates proofs from the provers for twine node. When k out o
 2. Run the arbitrager as
     ```sh
     cargo build --release
-    cargo run --release -- --config config.yaml run
+    cargo run --release -- --config temp-config.yaml run
     ```
 
     > Release flag is needed for sp1 verification.
