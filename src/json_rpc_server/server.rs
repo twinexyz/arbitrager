@@ -5,7 +5,7 @@ use sp1_sdk::SP1ProofWithPublicValues;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::Sender;
 
-use crate::types::ProofType;
+use crate::{error::ArbitragerError, json_rpc_server::ServerReturnType, types::ProofType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -59,16 +59,36 @@ impl JsonRpcServer {
             .register_async_method("twarb_sendProof", move |params, _ctx, _| {
                 let server_handle = server_handle.clone();
                 async move {
-                    let proof: ProofTypes = params.one().unwrap();
+                    let proof: ProofTypes = match params.one() {
+                        Ok(p) => p,
+                        Err(e) => {
+                            return ServerReturnType::Failure(format!(
+                                "Failed deserializing proof: {e:?}"
+                            ));
+                        }
+                    };
                     match proof {
                         ProofTypes::RISC0Proof { .. } => {
-                            panic!("Unimplemented!")
+                            tracing::info!("RISC0 Proof not supported at the moment");
+                            ServerReturnType::Failure("Not supported".to_string())
                         }
                         ProofTypes::SP1Proof { proof, identifier } => {
-                            server_handle.handle_sp1_proof(proof, identifier).await;
+                            match server_handle.handle_sp1_proof(proof, identifier).await {
+                                Ok(_) => ServerReturnType::Success,
+                                Err(e) => {
+                                    let error_msg = e.to_string();
+                                    ServerReturnType::Failure(error_msg)
+                                }
+                            }
                         }
                         ProofTypes::Dummy { proof, identifier } => {
-                            server_handle.handle_dummy_proof(proof, identifier).await;
+                            match server_handle.handle_dummy_proof(proof, identifier).await {
+                                Ok(_) => ServerReturnType::Success,
+                                Err(e) => {
+                                    let error_msg = e.to_string();
+                                    ServerReturnType::Failure(error_msg)
+                                }
+                            }
                         }
                     }
                 }
@@ -86,39 +106,27 @@ impl JsonRpcServer {
         Ok(())
     }
 
-    async fn handle_sp1_proof(&self, proof: SP1ProofWithPublicValues, identifier: String) {
+    async fn handle_sp1_proof(
+        &self,
+        proof: SP1ProofWithPublicValues,
+        identifier: String,
+    ) -> Result<()> {
+
         if !self.valid_senders.contains_key(&identifier) {
             tracing::error!("Invalid sender. Identifier:{}", identifier);
-            return;
+            return Err(ArbitragerError::InvalidSender(identifier).into());
         }
 
         self.verifier_tx
             .send(ProofType::SP1Proof(proof, identifier))
-            .await
-            .expect("Failed sending sp1 proof through mpsc");
+            .await?;
+        Ok(())
     }
 
-    async fn handle_dummy_proof(&self, proof: Vec<u8>, identifier: String) {
+    async fn handle_dummy_proof(&self, proof: Vec<u8>, identifier: String) -> Result<()> {
         self.verifier_tx
             .send(ProofType::Dummy(proof, identifier))
-            .await
-            .expect("Failed sending sp1 proof through mpsc");
+            .await?;
+        Ok(())
     }
 }
-
-/*
-{
-  "jsonrpc": "2.0",
-  "method": "twarb_sendProof",
-  "params": [
-    {
-      "type": "RISC0Proof",
-      "identifier": "prover-1",
-      "proof":{
-        "entire-proof-json"
-      }
-    }
-  ],
-  "id": 1
-}
-*/

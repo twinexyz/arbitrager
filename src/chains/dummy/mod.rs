@@ -9,6 +9,10 @@ impl BalanceProvider for DummyProvider {
     async fn query_balance(&self) -> Result<U256> {
         todo!()
     }
+
+    async fn balance_under_threshold(&self, threshold: U256) -> Result<(bool, String)> {
+        todo!()
+    }
 }
 
 impl ProofSubmitter for DummyProvider {

@@ -1,13 +1,14 @@
 use anyhow::Error;
 use anyhow::Result;
 use serde::Deserialize;
+use serde::Serialize;
 use std::collections::HashMap;
 
 use crate::types::SupportedProvers;
 use crate::utils::check_directory_exists;
 use crate::utils::is_valid_url;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub global: GlobalConfig,
     pub elf: HashMap<String, String>,
@@ -15,7 +16,7 @@ pub struct Config {
     pub l1s: HashMap<String, L1Details>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalConfig {
     pub logging: String,
     pub server_port: u16,
@@ -24,13 +25,13 @@ pub struct GlobalConfig {
     pub balance_check_interval: u64, // in minutes
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProverDetails {
     pub prover_ip: String,
     pub prover_type: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum L1Details {
     Solana(SolanaConfig),
@@ -46,7 +47,7 @@ impl L1Details {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SolanaConfig {
     pub contract: String,
     pub rpc: String,
@@ -55,7 +56,7 @@ pub struct SolanaConfig {
     pub solana_password: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EVMConfig {
     pub contract: String,
     pub balance_threshold: String,

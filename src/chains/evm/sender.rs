@@ -3,7 +3,8 @@ use std::time::Duration;
 use crate::{chains::chains::ProofSubmitter, types::PostParams};
 
 use super::provider::EVMProvider;
-use alloy::{rpc::types::TransactionRequest, sol};
+use alloy::{network::TransactionBuilder, rpc::types::TransactionRequest, sol};
+
 use alloy_primitives::U256;
 use alloy_provider::Provider;
 use anyhow::Result;
@@ -49,7 +50,9 @@ impl ProofSubmitter for EVMProvider {
                     }
                 }
             }
-            PostParams::Dummy(dummy_params, _) => todo!(),
+            PostParams::Dummy(dummy_params, _) => {
+                tracing::warn!("Dummy chain: Mock txn submission successful");
+            }
         }
         Ok(())
     }
@@ -65,6 +68,7 @@ impl EVMProvider {
     pub async fn send_transaction(&self, transaction: TransactionRequest) -> Result<String> {
         loop {
             let pending_tx = self.provider.send_transaction(transaction.clone()).await?;
+
             tracing::debug!("Pending transaction hash: {}", pending_tx.tx_hash());
             match pending_tx.get_receipt().await {
                 Ok(receipt) => {

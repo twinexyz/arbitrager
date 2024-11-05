@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use alloy_primitives::utils::{format_units, parse_units};
+use alloy_primitives::utils::parse_units;
 use tokio::time::sleep;
 
 use crate::chains::chains::{BalanceProvider, ChainProviders};
@@ -31,16 +31,18 @@ impl BalanceChecker {
         tracing::info!("Balance checker running");
         loop {
             for (chain, provider) in self.providers.clone() {
-                match provider.query_balance().await {
-                    Ok(balance) => {
-                        let threshold_balance =
-                            parse_units(self.balance_threshold.get(&chain).unwrap(), "ether")?;
-                        if balance.lt(&threshold_balance.into()) {
-                            let num: String = format_units(balance, "ether")?;
+                let threshold_balance =
+                    parse_units(self.balance_threshold.get(&chain).unwrap(), "ether")?;
+                match provider
+                    .balance_under_threshold(threshold_balance.get_absolute())
+                    .await
+                {
+                    Ok((under_threshold, balance)) => {
+                        if under_threshold {
                             tracing::warn!(
-                                "Balance under threshold! chain:{} balance:{} eth",
+                                "Balance under threshold! chain:{} balance:{}",
                                 chain,
-                                num
+                                balance
                             );
                             // webhook
                         }

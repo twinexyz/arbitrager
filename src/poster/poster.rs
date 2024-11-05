@@ -56,7 +56,7 @@ impl Poster {
                             },
                         };
                         info!("Post status received. Sending status to post_status channel");
-                        self.post_status_tx.send(post_status).await.unwrap();
+                        self.post_status_tx.send(post_status).await?;
                     }
                     Err(_) => {
                         // handle proofs
