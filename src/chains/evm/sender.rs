@@ -77,8 +77,8 @@ impl L1Transactions for EVMProvider {
         let tx_data = contract.commitBatch(params);
 
         let tx_req = tx_data
-            .max_fee_per_gas(200000000)
-            .max_priority_fee_per_gas(20000)
+            .max_fee_per_gas(20000000000)
+            .max_priority_fee_per_gas(2000000)
             .into_transaction_request();
 
         match self.send_transaction(tx_req).await {
@@ -111,8 +111,8 @@ impl L1Transactions for EVMProvider {
                 let tx_data = contract.finalizeBatch(block, plonk_proof.clone());
 
                 let tx_req = tx_data
-                    .max_fee_per_gas(2000000000)
-                    .max_priority_fee_per_gas(200000)
+                    .max_fee_per_gas(20000000000)
+                    .max_priority_fee_per_gas(2000000)
                     .into_transaction_request();
 
                 // handle nonce error, gas error correctly
