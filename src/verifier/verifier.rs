@@ -6,8 +6,9 @@ use tokio::sync::mpsc::Receiver;
 use crate::{
     database::db::DB,
     types::{PostParams, ProofType, SupportedProvers},
-    verifier::sp1::verify_sp1_proof,
 };
+
+use super::sp1::SP1;
 
 pub trait ProofTraits {
     fn process_proof(proof: String, blocku64: u64) -> Result<PostParams>;
@@ -26,12 +27,12 @@ impl Verifier {
         }
     }
 
-    pub async fn run(&mut self) -> Result<()> {
+    pub async fn run(&mut self, sp1: SP1) -> Result<()> {
         tracing::info!("Verifier service running");
         while let Some(proof) = self.verifier_rx.recv().await {
             match proof {
                 ProofType::SP1Proof(sp1_proof_with_public_values, identifier) => {
-                    match verify_sp1_proof(sp1_proof_with_public_values.clone()) {
+                    match sp1.verify_sp1_proof(sp1_proof_with_public_values.clone()) {
                         Ok(height) => {
                             tracing::info!("Proof verified. proof_type=sp1 client={}", identifier);
                             let raw_string = serde_json::to_string(&sp1_proof_with_public_values)?;
