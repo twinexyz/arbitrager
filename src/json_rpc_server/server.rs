@@ -57,6 +57,7 @@ impl JsonRpcServer {
 
         module
             .register_async_method("twarb_sendProof", move |params, _ctx, _| {
+                tracing::info!("Received proof");
                 let server_handle = server_handle.clone();
                 async move {
                     let proof: ProofTypes = match params.one() {
