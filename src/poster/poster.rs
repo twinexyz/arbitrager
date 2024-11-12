@@ -46,8 +46,8 @@ impl Poster {
     pub async fn run(&mut self, mut post_rx: Receiver<PostParams>) -> Result<()> {
         tracing::info!("Prover service running");
         while let Some(data) = post_rx.recv().await {
+            tracing::info!("Ready for commit batch and finalize batch");
             // handle batch number here
-
             let l2_height = data.height();
             let mut commit_batch_info = self.l2_provider.fetch_commit_batch(l2_height).await?;
             commit_batch_info.batchNumber = self.batch_number;
@@ -93,7 +93,6 @@ impl Poster {
             }
             self.batch_number += 1;
         }
-        tracing::warn!("================================================================ CHANNEL DEAD ============================================================");
         Ok(())
     }
 }
