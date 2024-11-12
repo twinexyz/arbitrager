@@ -8,6 +8,11 @@ elf:
   sp1: /home/lilixac/twine/arbitrager/assets/elf/riscv32im-succinct-zkvm-elf
   risc0: 
   dummy: 
+l2:
+  chain_type: evm
+  rpc: http://127.0.0.1:8550
+  messenger_contract: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 
+  start_batch_number: 1
 provers:
   identifier1:
       prover_ip: http://127.0.0.1:50001
