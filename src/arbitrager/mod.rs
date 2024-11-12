@@ -9,14 +9,14 @@ use tokio::{sync::mpsc, task};
 
 use crate::{
     balance_checker::BalanceChecker,
-    chains::chains::{make_providers, ChainProviders},
+    chains::chains::{make_l2_provider, make_providers, ChainProviders},
     config::Config,
     database::db::DB,
     error::ArbitragerError,
     json_rpc_server::server::JsonRpcServer,
     poster::poster::Poster,
     types::make_threshold_map,
-    verifier::verifier::Verifier,
+    verifier::{sp1::SP1, verifier::Verifier},
 };
 
 pub static ELF_CONFIG: Lazy<RwLock<HashMap<String, String>>> =
@@ -45,6 +45,8 @@ pub async fn run(cfg: Config) -> Result<()> {
     let threshold = cfg.global.threshold;
     let balance_check_interval = cfg.global.balance_check_interval;
     let l1s = cfg.l1s;
+    let l2 = cfg.l2;
+    let start_batch_number = l2.start_batch_number;
 
     let elfs: HashMap<String, String> = cfg.elf;
     {
@@ -64,7 +66,12 @@ pub async fn run(cfg: Config) -> Result<()> {
 
     let mut verifier = Verifier::new(verifier_rx, Arc::clone(&db_arc));
 
-    let poster = Poster::new(providers, post_status_tx);
+    let mut poster = Poster::new(
+        providers,
+        post_status_tx,
+        make_l2_provider(l2),
+        start_batch_number,
+    );
 
     let server_task = task::spawn(async move {
         proof_receiver
@@ -73,9 +80,11 @@ pub async fn run(cfg: Config) -> Result<()> {
             .map_err(|e| ArbitragerError::JsonRPCServerError(e.to_string()))
     });
 
+    let sp1 = SP1::new().await;
+
     let validator_task = task::spawn(async move {
         verifier
-            .run()
+            .run(sp1)
             .await
             .map_err(|e| ArbitragerError::Custom(e.to_string()))
     });

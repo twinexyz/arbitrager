@@ -12,6 +12,7 @@ use crate::utils::is_valid_url;
 pub struct Config {
     pub global: GlobalConfig,
     pub elf: HashMap<String, String>,
+    pub l2: L2Details,
     pub provers: HashMap<String, ProverDetails>,
     pub l1s: HashMap<String, L1Details>,
 }
@@ -23,6 +24,14 @@ pub struct GlobalConfig {
     pub threshold: usize,
     pub db_path: String,
     pub balance_check_interval: u64, // in minutes
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct L2Details {
+    pub chain_type: String,
+    pub messenger_contract: String,
+    pub rpc: String,
+    pub start_batch_number: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -85,6 +94,10 @@ impl Config {
                     format!("{} elf file does not exist", v).to_string(),
                 ));
             }
+        }
+
+        if !is_valid_url(&self.l2.rpc) {
+            return Err(Error::msg("Invalid l2_rpc URL".to_string()));
         }
 
         for value in self.provers.values() {

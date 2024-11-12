@@ -1,7 +1,7 @@
 use crate::{
     arbitrager::run,
     chains::{
-        chains::ProofSubmitter,
+        chains::L1Transactions,
         evm::provider::{EVMProvider, EVMProviderConfig},
     },
     config::Config,
@@ -99,7 +99,10 @@ pub async fn init() -> Result<()> {
             chain,
             proof_type,
             proof_json,
-        } => Ok(manual_proof_relay(cfg, height, chain, proof_type, proof_json).await),
+        } => {
+            manual_proof_relay(cfg, height, chain, proof_type, proof_json).await;
+            Ok(())
+        }
     }
 }
 
@@ -125,10 +128,10 @@ pub async fn manual_proof_relay(
             );
             let provider = EVMProvider::new(provider_config);
             let post_params =
-                match SupportedProvers::from_str(&proof_type).expect("Invalid proof type") {
-                    SupportedProvers::SP1 => SP1::process_proof(proof_string, height.clone()),
-                    SupportedProvers::RISC0 => RISC0::process_proof(proof_string, height.clone()),
-                    SupportedProvers::Dummy => Dummy::process_proof(proof_string, height.clone()),
+                match SupportedProvers::from_str(proof_type).expect("Invalid proof type") {
+                    SupportedProvers::SP1 => SP1::process_proof(proof_string, *height),
+                    SupportedProvers::RISC0 => RISC0::process_proof(proof_string, *height),
+                    SupportedProvers::Dummy => Dummy::process_proof(proof_string, *height),
                 }
                 .expect("Failed to construct proof params");
 

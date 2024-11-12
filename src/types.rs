@@ -24,6 +24,24 @@ pub enum PostParams {
     Dummy(DummyParams, u64),
 }
 
+impl PostParams {
+    pub fn height(&self) -> u64 {
+        match self {
+            PostParams::RiscZero(_, h) => *h,
+            PostParams::Sp1(_, h) => *h,
+            PostParams::Dummy(_, h) => *h,
+        }
+    }
+
+    pub fn with_batch(&self, batch: u64) -> PostParams {
+        match self {
+            PostParams::RiscZero(p, _) => PostParams::RiscZero(p.clone(), batch),
+            PostParams::Sp1(p, _) => PostParams::Sp1(p.clone(), batch),
+            PostParams::Dummy(p, _) => PostParams::Dummy(p.clone(), batch),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Sp1params {
     pub vk: FixedBytes<32>,
