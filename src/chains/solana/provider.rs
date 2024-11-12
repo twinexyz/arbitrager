@@ -1,4 +1,7 @@
-use crate::chains::chains::{BalanceProvider, ProofSubmitter};
+use crate::chains::{
+    chains::{BalanceProvider, FetchL2TransactionData, L1Transactions},
+    evm::sender::TwineChain::CommitBatchInfo,
+};
 use alloy_primitives::U256;
 use anyhow::Result;
 
@@ -15,8 +18,18 @@ impl BalanceProvider for SolanaProvider {
     }
 }
 
-impl ProofSubmitter for SolanaProvider {
+impl L1Transactions for SolanaProvider {
     async fn submit_proof(&self, params: crate::types::PostParams) -> Result<()> {
+        todo!()
+    }
+
+    async fn commit_batch(&self, params: CommitBatchInfo, height: u64) -> Result<()> {
+        todo!()
+    }
+}
+
+impl FetchL2TransactionData for SolanaProvider {
+    async fn fetch_commit_batch(&self, height: u64) -> Result<CommitBatchInfo> {
         todo!()
     }
 }
