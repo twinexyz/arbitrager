@@ -1,7 +1,7 @@
 use crate::{
     arbitrager::run,
     chains::{
-        chains::L1Transactions,
+        chains::{FetchL2TransactionData, L1Transactions},
         evm::provider::{EVMProvider, EVMProviderConfig},
     },
     config::Config,
@@ -42,6 +42,9 @@ pub enum Commands {
     ManualRelay {
         #[arg(short, long)]
         height: u64,
+
+        #[arg(short, long)]
+        batch: u64,
 
         #[arg(short, long)]
         chain: String,
@@ -97,11 +100,12 @@ pub async fn init() -> Result<()> {
         Commands::DeleteDB => delete_db(cfg).await,
         Commands::ManualRelay {
             height,
+            batch,
             chain,
             proof_type,
             proof_json,
         } => {
-            manual_proof_relay(cfg, height, chain, proof_type, proof_json).await;
+            manual_proof_relay(cfg, height, batch, chain, proof_type, proof_json).await;
             Ok(())
         }
     }
@@ -111,6 +115,7 @@ pub async fn init() -> Result<()> {
 pub async fn manual_proof_relay(
     cfg: Config,
     height: &u64,
+    batch_number: &u64,
     chain: &String,
     proof_type: &String,
     proof_json: &PathBuf,
@@ -128,6 +133,23 @@ pub async fn manual_proof_relay(
                 evmconfig.contract.clone(),
             );
             let provider = EVMProvider::new(provider_config);
+
+            let mut commit_batch_info = provider
+                .fetch_commit_batch(*height)
+                .await
+                .expect("Failed to construct commit batch info");
+            commit_batch_info.batchNumber = *batch_number;
+
+            match provider.commit_batch(commit_batch_info, *height).await {
+                Ok(_) => {
+                    println!("Commit batch successful");
+                }
+                Err(e) => {
+                    eprintln!("{}", e.to_string());
+                    panic!("Commit failed");
+                }
+            }
+
             let post_params =
                 match SupportedProvers::from_str(proof_type).expect("Invalid proof type") {
                     SupportedProvers::SP1 => SP1::process_proof(proof_string, *height),
@@ -138,7 +160,7 @@ pub async fn manual_proof_relay(
 
             match provider.submit_proof(post_params).await {
                 Ok(_) => {
-                    println!("Transaction successful ");
+                    println!("Proof submission successful ");
                 }
                 Err(e) => {
                     println!("Transaction failed! {e:?}");
