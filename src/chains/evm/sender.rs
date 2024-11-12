@@ -52,6 +52,7 @@ sol! {
         struct CommitBatchInfo{
             uint64 batchNumber;
             bytes32 batchHash;
+            bytes32 previousStateRoot;
             bytes32 stateRoot;
             bytes32 transactionRoot;
             bytes32 receiptRoot;

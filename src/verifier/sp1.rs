@@ -1,9 +1,10 @@
 use std::fs::{self};
 
+use alloy::hex::ToHexExt;
 use alloy_primitives::{Bytes, FixedBytes};
 use anyhow::Result;
 use hex::FromHex;
-use sp1_sdk::{ProverClient, SP1ProofWithPublicValues, SP1VerifyingKey};
+use sp1_sdk::{HashableKey, ProverClient, SP1ProofWithPublicValues, SP1VerifyingKey};
 
 use crate::{
     arbitrager::ELF_CONFIG,
@@ -35,6 +36,10 @@ impl SP1 {
             .unwrap();
 
         let (_, vk) = client.setup(&elf);
+
+        let vk_hash = vk.bytes32();
+        tracing::info!("The verifying key is: {}", vk_hash);
+
 
         SP1 {
             prover_client: client,
@@ -128,7 +133,6 @@ mod test {
     use std::{fs::File, io::BufReader};
 
     use sp1_sdk::{ProverClient, SP1ProofWithPublicValues};
-
     #[test]
     fn test_decode_proof() {
         let file = File::open("./assets/proof.json").expect("Proof File not found!");

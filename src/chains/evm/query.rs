@@ -59,9 +59,27 @@ impl FetchL2TransactionData for EVMProvider {
             {
                 Ok(block) => {
                     if let Some(blk) = block {
+                        let prev_state_root = match self
+                            .provider
+                            .get_block_by_number(
+                                BlockNumberOrTag::Number(blk.header.number - 1),
+                                true,
+                            )
+                            .await
+                        {
+                            Ok(xx) => xx.unwrap().header.state_root,
+                            Err(_) => {
+                                attempt += 1;
+                                continue;
+                            }
+                        };
                         match self.filter_l2_transactions(blk.header.hash).await {
                             Ok(filter) => {
-                                return Ok(EVMProvider::generate_commit_params(blk, filter))
+                                return Ok(EVMProvider::generate_commit_params(
+                                    blk,
+                                    filter,
+                                    prev_state_root,
+                                ))
                             }
                             Err(e) => {
                                 attempt += 1;
@@ -125,6 +143,7 @@ impl EVMProvider {
     pub fn generate_commit_params(
         block: Block,
         filter: HashMap<u64, L2TxType>,
+        prev_state_root: FixedBytes<32>,
     ) -> TwineChain::CommitBatchInfo {
         let mut deposit_txns_object = Vec::new();
         let mut withdraw_txns_object = Vec::new();
@@ -182,6 +201,7 @@ impl EVMProvider {
             batchNumber: block.header.number,
             batchHash: block.header.hash,
             stateRoot: block.header.state_root,
+            previousStateRoot: prev_state_root,
             transactionRoot: block.header.transactions_root,
             receiptRoot: block.header.receipts_root,
             otherTransactions: normal_txns_object,
