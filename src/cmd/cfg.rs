@@ -5,6 +5,7 @@ use crate::{
         evm::provider::{EVMProvider, EVMProviderConfig},
     },
     config::Config,
+    database::db::DB,
     types::SupportedProvers,
     verifier::{dummy::Dummy, risc0::RISC0, sp1::SP1, verifier::ProofTraits},
 };
@@ -93,7 +94,7 @@ pub async fn init() -> Result<()> {
     match &cli.command {
         Commands::Run => handle_run_command(cfg).await,
         Commands::Show => handle_show_command(cfg),
-        Commands::DeleteDB => todo!(),
+        Commands::DeleteDB => delete_db(cfg).await,
         Commands::ManualRelay {
             height,
             chain,
@@ -154,6 +155,15 @@ async fn handle_run_command(cfg: Config) -> Result<()> {
         process::exit(1);
     });
 
+    Ok(())
+}
+
+async fn delete_db(cfg: Config) -> Result<()> {
+    let db = DB::new(cfg.global.threshold, cfg.global.db_path).await;
+    let _ = db
+        .delete_db()
+        .await
+        .map_err(|e| tracing::error!("Failed to delete DB: {:?}", e));
     Ok(())
 }
 

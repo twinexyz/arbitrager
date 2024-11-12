@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use tokio::sync::mpsc::Receiver;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::{
     database::db::DB,
@@ -27,9 +27,10 @@ impl Verifier {
         }
     }
 
-    pub async fn run(&mut self, sp1: SP1) -> Result<()> {
+    pub async fn run(&mut self, sp1: SP1, poster_tx: Sender<PostParams>) -> Result<()> {
         tracing::info!("Verifier service running");
         while let Some(proof) = self.verifier_rx.recv().await {
+            let poster_tx = poster_tx.clone();
             match proof {
                 ProofType::SP1Proof(sp1_proof_with_public_values, identifier) => {
                     match sp1.verify_sp1_proof(sp1_proof_with_public_values.clone()) {
@@ -44,6 +45,7 @@ impl Verifier {
                                     SupportedProvers::SP1,
                                     height,
                                     raw_string,
+                                    poster_tx,
                                 )
                                 .await;
                         }
@@ -69,6 +71,7 @@ impl Verifier {
                             SupportedProvers::Dummy,
                             vec[1] as u64,
                             proof_string,
+                            poster_tx,
                         )
                         .await;
                 }

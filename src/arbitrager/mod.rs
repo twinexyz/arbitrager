@@ -62,7 +62,7 @@ pub async fn run(cfg: Config) -> Result<()> {
         BalanceChecker::new(providers.clone(), balance_threshold, balance_check_interval);
 
     let proof_receiver = JsonRpcServer::new(provers, verifier_tx);
-    let db_arc = Arc::new(DB::new(poster_tx, threshold, db_path).await);
+    let db_arc = Arc::new(DB::new(threshold, db_path).await);
 
     let mut verifier = Verifier::new(verifier_rx, Arc::clone(&db_arc));
 
@@ -84,7 +84,7 @@ pub async fn run(cfg: Config) -> Result<()> {
 
     let validator_task = task::spawn(async move {
         verifier
-            .run(sp1)
+            .run(sp1, poster_tx)
             .await
             .map_err(|e| ArbitragerError::Custom(e.to_string()))
     });
