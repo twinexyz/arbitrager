@@ -47,7 +47,10 @@ impl Verifier {
                                     raw_string,
                                     poster_tx,
                                 )
-                                .await;
+                                .await
+                                .map_err(|e| {
+                                    tracing::error!("Error saving proof to db {:?}", e.to_string());
+                                });
                         }
                         Err(e) => {
                             tracing::error!(
