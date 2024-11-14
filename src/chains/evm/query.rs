@@ -115,7 +115,7 @@ impl EVMProvider {
         let mut tx_types = HashMap::<u64, L2TxType>::new();
 
         let filter = Filter::new()
-            .events(["L1Deposit(),ForcedWithdrawal()"])
+            .events(["L1Deposit()","ForcedWithdrawal()"])
             .at_block_hash(block_hash)
             .address(self.config.contract_address);
 
