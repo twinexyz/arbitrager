@@ -13,22 +13,27 @@ impl BalanceProvider for DummyProvider {
     }
 
     async fn balance_under_threshold(&self, threshold: U256) -> Result<(bool, String)> {
+        let _ = threshold;
         todo!()
     }
 }
 
 impl L1Transactions for DummyProvider {
     async fn submit_proof(&self, params: crate::types::PostParams) -> Result<()> {
+        let _ = params;
         todo!()
     }
 
     async fn commit_batch(&self, params: CommitBatchInfo, height: u64) -> Result<()> {
+        let _ = params;
+        let _ = height;
         todo!()
     }
 }
 
 impl FetchL2TransactionData for DummyProvider {
     async fn fetch_commit_batch(&self, height: u64) -> Result<CommitBatchInfo> {
+        let _ = height;
         todo!()
     }
 }

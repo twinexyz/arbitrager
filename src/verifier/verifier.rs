@@ -61,7 +61,7 @@ impl Verifier {
                         }
                     }
                 }
-                ProofType::RISC0(vec, identifier) => {
+                ProofType::RISC0(_vec, identifier) => {
                     tracing::error!("RISC0 not supported! client={}", identifier);
                 }
                 ProofType::Dummy(vec, identifier) => {

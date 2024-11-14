@@ -11,8 +11,8 @@ use crate::{
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use home::home_dir;
 use std::{
-    env::home_dir,
     fs::File,
     io::Read,
     path::PathBuf,
@@ -21,7 +21,7 @@ use std::{
 
 use super::logger::logging;
 
-const DEFAULT_CONFIG_DIR: &str = "./twine/arbitrager/config.yaml";
+const DEFAULT_CONFIG_DIR: &str = ".twine/arbitrager/config.yaml";
 
 #[derive(Parser, Debug)]
 #[command(name = "twarb")]
@@ -125,7 +125,7 @@ pub async fn manual_proof_relay(
         std::fs::read_to_string(proof_json).expect("Failed to read proof file as string");
     let destination = l2_chains.get(chain).expect("Invalid chain name");
     match destination {
-        crate::config::L1Details::Solana(solana_config) => todo!(),
+        crate::config::L1Details::Solana(_solana_config) => todo!(),
         crate::config::L1Details::EVM(evmconfig) => {
             let provider_config = EVMProviderConfig::new(
                 evmconfig.rpc.clone(),
@@ -145,7 +145,7 @@ pub async fn manual_proof_relay(
                     println!("Commit batch successful");
                 }
                 Err(e) => {
-                    eprintln!("{}", e.to_string());
+                    eprintln!("{}", e);
                     panic!("Commit failed");
                 }
             }

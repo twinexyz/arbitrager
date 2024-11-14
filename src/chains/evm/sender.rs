@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{chains::chains::L1Transactions, types::PostParams};
 
 use super::provider::EVMProvider;
-use alloy::{network::TransactionBuilder, rpc::types::TransactionRequest, sol};
+use alloy::{rpc::types::TransactionRequest, sol};
 
 use alloy_primitives::U256;
 use alloy_provider::Provider;
@@ -101,7 +101,7 @@ impl L1Transactions for EVMProvider {
     async fn submit_proof(&self, params: PostParams) -> Result<()> {
         tracing::info!("Submitting proof for batch: {}", params.height());
         match params {
-            PostParams::RiscZero(evm_risc0_params, block) => todo!(),
+            PostParams::RiscZero(_evm_risc0_params, _block) => todo!(),
             PostParams::Sp1(sp1_params, block) => {
                 let contract = TwineChain::new(self.config.contract_address, self.provider.clone());
 
@@ -130,7 +130,7 @@ impl L1Transactions for EVMProvider {
                     }
                 }
             }
-            PostParams::Dummy(dummy_params, _) => {
+            PostParams::Dummy(_dummy_params, _) => {
                 tracing::warn!("Dummy chain: Mock txn submission successful");
             }
         }
@@ -139,10 +139,6 @@ impl L1Transactions for EVMProvider {
 }
 
 impl EVMProvider {
-    pub fn make_transaction_request(&self, params: PostParams) -> TransactionRequest {
-        TransactionRequest::default()
-    }
-
     /// This function keeps on running unless the transaction is successful.
     /// If failed, it tries to do the transaction again, waiting for 15 seconds. This runs in infinite loop.
     pub async fn send_transaction(&self, transaction: TransactionRequest) -> Result<String> {

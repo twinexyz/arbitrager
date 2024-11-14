@@ -116,7 +116,7 @@ pub fn make_providers(l1s: HashMap<String, L1Details>) -> HashMap<String, ChainP
     l1s.iter()
         .map(|(key, detail)| {
             let provider = match detail {
-                L1Details::Solana(solana_config) => todo!(),
+                L1Details::Solana(_solana_config) => todo!(),
                 L1Details::EVM(evmconfig) => {
                     let evm_config = EVMProviderConfig::new(
                         evmconfig.rpc.clone(),

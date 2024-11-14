@@ -1,6 +1,5 @@
 use std::fs::{self};
 
-use alloy::hex::ToHexExt;
 use alloy_primitives::{Bytes, FixedBytes};
 use anyhow::Result;
 use hex::FromHex;
