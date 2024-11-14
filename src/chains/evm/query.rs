@@ -157,7 +157,7 @@ impl EVMProvider {
             };
             let r = FixedBytes::from_slice(&signature.r.as_le_bytes());
             let s = FixedBytes::from_slice(&signature.s.as_le_bytes());
-            let v: u8 = signature.v.to::<u8>();
+            let v: u8 = if signature.v.gt(&U256::ZERO) {1u8} else {0u8};
 
             let l1_txn = TwineChain::TransactionObject {
                 from: txn.from,
