@@ -5,6 +5,8 @@ pub struct Dummy;
 
 impl ProofTraits for Dummy {
     fn process_proof(proof: String, blocku64: u64) -> Result<crate::types::PostParams> {
+        let _ = proof;
+        let _ = blocku64;
         todo!()
     }
 }

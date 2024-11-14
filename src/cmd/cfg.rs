@@ -1,17 +1,18 @@
 use crate::{
     arbitrager::run,
     chains::{
-        chains::ProofSubmitter,
+        chains::{FetchL2TransactionData, L1Transactions},
         evm::provider::{EVMProvider, EVMProviderConfig},
     },
     config::Config,
+    database::db::DB,
     types::SupportedProvers,
     verifier::{dummy::Dummy, risc0::RISC0, sp1::SP1, verifier::ProofTraits},
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use home::home_dir;
 use std::{
-    env::home_dir,
     fs::File,
     io::Read,
     path::PathBuf,
@@ -20,7 +21,7 @@ use std::{
 
 use super::logger::logging;
 
-const DEFAULT_CONFIG_DIR: &str = "./twine/arbitrager/config.yaml";
+const DEFAULT_CONFIG_DIR: &str = ".twine/arbitrager/config.yaml";
 
 #[derive(Parser, Debug)]
 #[command(name = "twarb")]
@@ -41,6 +42,9 @@ pub enum Commands {
     ManualRelay {
         #[arg(short, long)]
         height: u64,
+
+        #[arg(short, long)]
+        batch: u64,
 
         #[arg(short, long)]
         chain: String,
@@ -93,13 +97,17 @@ pub async fn init() -> Result<()> {
     match &cli.command {
         Commands::Run => handle_run_command(cfg).await,
         Commands::Show => handle_show_command(cfg),
-        Commands::DeleteDB => todo!(),
+        Commands::DeleteDB => delete_db(cfg).await,
         Commands::ManualRelay {
             height,
+            batch,
             chain,
             proof_type,
             proof_json,
-        } => Ok(manual_proof_relay(cfg, height, chain, proof_type, proof_json).await),
+        } => {
+            manual_proof_relay(cfg, height, batch, chain, proof_type, proof_json).await;
+            Ok(())
+        }
     }
 }
 
@@ -107,6 +115,7 @@ pub async fn init() -> Result<()> {
 pub async fn manual_proof_relay(
     cfg: Config,
     height: &u64,
+    batch_number: &u64,
     chain: &String,
     proof_type: &String,
     proof_json: &PathBuf,
@@ -116,7 +125,7 @@ pub async fn manual_proof_relay(
         std::fs::read_to_string(proof_json).expect("Failed to read proof file as string");
     let destination = l2_chains.get(chain).expect("Invalid chain name");
     match destination {
-        crate::config::L1Details::Solana(solana_config) => todo!(),
+        crate::config::L1Details::Solana(_solana_config) => todo!(),
         crate::config::L1Details::EVM(evmconfig) => {
             let provider_config = EVMProviderConfig::new(
                 evmconfig.rpc.clone(),
@@ -124,17 +133,34 @@ pub async fn manual_proof_relay(
                 evmconfig.contract.clone(),
             );
             let provider = EVMProvider::new(provider_config);
+
+            let mut commit_batch_info = provider
+                .fetch_commit_batch(*height)
+                .await
+                .expect("Failed to construct commit batch info");
+            commit_batch_info.batchNumber = *batch_number;
+
+            match provider.commit_batch(commit_batch_info, *height).await {
+                Ok(_) => {
+                    println!("Commit batch successful");
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                    panic!("Commit failed");
+                }
+            }
+
             let post_params =
-                match SupportedProvers::from_str(&proof_type).expect("Invalid proof type") {
-                    SupportedProvers::SP1 => SP1::process_proof(proof_string, height.clone()),
-                    SupportedProvers::RISC0 => RISC0::process_proof(proof_string, height.clone()),
-                    SupportedProvers::Dummy => Dummy::process_proof(proof_string, height.clone()),
+                match SupportedProvers::from_str(proof_type).expect("Invalid proof type") {
+                    SupportedProvers::SP1 => SP1::process_proof(proof_string, *height),
+                    SupportedProvers::RISC0 => RISC0::process_proof(proof_string, *height),
+                    SupportedProvers::Dummy => Dummy::process_proof(proof_string, *height),
                 }
                 .expect("Failed to construct proof params");
 
             match provider.submit_proof(post_params).await {
                 Ok(_) => {
-                    println!("Transaction successful ");
+                    println!("Proof submission successful ");
                 }
                 Err(e) => {
                     println!("Transaction failed! {e:?}");
@@ -151,6 +177,15 @@ async fn handle_run_command(cfg: Config) -> Result<()> {
         process::exit(1);
     });
 
+    Ok(())
+}
+
+async fn delete_db(cfg: Config) -> Result<()> {
+    let db = DB::new(cfg.global.threshold, cfg.global.db_path).await;
+    let _ = db
+        .delete_db()
+        .await
+        .map_err(|e| tracing::error!("Failed to delete DB: {:?}", e));
     Ok(())
 }
 

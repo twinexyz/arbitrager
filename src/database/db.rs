@@ -29,14 +29,13 @@ async fn connect_to_mongodb(uri: &str) -> mongodb::error::Result<Database> {
 }
 
 pub struct DB {
-    pub poster_tx: Sender<PostParams>,
     pub threshold: usize,
     pub proof_collection: Collection<ProofDetails>,
     pub l1_collection: Collection<L1Details>,
 }
 
 impl DB {
-    pub async fn new(poster_tx: Sender<PostParams>, threshold: usize, db_conn_str: String) -> Self {
+    pub async fn new(threshold: usize, db_conn_str: String) -> Self {
         let database = match connect_to_mongodb(&db_conn_str).await {
             Ok(db) => db,
             Err(e) => {
@@ -49,11 +48,17 @@ impl DB {
         let l1_collection: Collection<L1Details> = database.collection(POSTER_COLLECTION_NAME);
 
         Self {
-            poster_tx,
             threshold,
             proof_collection,
             l1_collection,
         }
+    }
+
+    /// Delete all mongodb collections
+    pub async fn delete_db(&self) -> Result<()> {
+        self.proof_collection.drop().await?;
+        self.l1_collection.drop().await?;
+        Ok(())
     }
 
     /// The post status rx always receives response about the proof that was posted to multiple L1s.
@@ -171,6 +176,7 @@ impl DB {
         prover_type: SupportedProvers,
         block: u64,
         proof: String,
+        poster_tx: Sender<PostParams>,
     ) -> Result<()> {
         let block_str = block.to_string();
         let filter = doc! { format!("blocks.{}", block_str): { "$exists": true } };
@@ -253,7 +259,7 @@ impl DB {
                             }
                         };
                         if let Ok(ref param) = params {
-                            self.poster_tx.send(param.clone()).await?;
+                            poster_tx.send(param.clone()).await?;
                         }
                     }
                 }
@@ -303,7 +309,7 @@ impl DB {
                         }
                     };
                     if let Ok(ref param) = params {
-                        self.poster_tx.send(param.clone()).await?;
+                        poster_tx.send(param.clone()).await?;
                     }
                 }
             }
