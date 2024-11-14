@@ -78,25 +78,45 @@ impl DB {
 
             let filter = doc! { format!("l1s.{}", block): { "$exists": true } };
 
-            match self.l1_collection.find_one(filter.clone()).await? {
-                Some(mut doc) => {
-                    let l1_entry = doc.l1s.entry(block.clone()).or_insert_with(HashMap::new);
-                    l1_entry.insert(chain.clone(), posted);
+            // TODO: Verify later
+            match self.l1_collection.find_one(filter.clone()).await {
+                Ok(doc) => match doc {
+                    Some(mut doc) => {
+                        let l1_entry = doc.l1s.entry(block.clone()).or_insert_with(HashMap::new);
+                        l1_entry.insert(chain.clone(), posted);
 
-                    let update = doc! {
-                        "$set": {
-                            format!("l1s.{}", block): bson::to_bson(&doc.l1s)?,
-                        }
-                    };
-                    self.l1_collection.update_one(filter, update).await?;
+                        let update = doc! {
+                            "$set": {
+                                format!("l1s.{}", block): bson::to_bson(&doc.l1s)?,
+                            }
+                        };
+                        self.l1_collection.update_one(filter, update).await?;
 
-                    tracing::info!(
-                        "Proof post result added in db for chain:{} block:{}",
-                        chain,
-                        block
-                    );
-                }
-                None => {
+                        tracing::info!(
+                            "Proof post result added in db for chain:{} block:{}",
+                            chain,
+                            block
+                        );
+                    }
+                    None => {
+                        let mut poster_1 = HashMap::new();
+                        poster_1.insert(chain.clone(), posted);
+                        let mut l1s = HashMap::new();
+                        l1s.insert(block.clone(), poster_1);
+
+                        let final_struct = L1Details { l1s };
+                        let res = self.l1_collection.insert_one(final_struct).await?;
+                        tracing::info!(
+                            "Proof post result inserted to db at id: {} chain:{} height:{}",
+                            res.inserted_id,
+                            chain,
+                            block
+                        );
+                    }
+                },
+                Err(e) => {
+                    tracing::error!("Error finding status error: {:?}", e.to_string());
+                    
                     let mut poster_1 = HashMap::new();
                     poster_1.insert(chain.clone(), posted);
                     let mut l1s = HashMap::new();
