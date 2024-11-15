@@ -34,7 +34,7 @@ sol! {
             bytes input;
             bytes32 r;
             bytes32 s;
-            uint8 v;
+            uint64 v;
             uint256 yParity;
             uint256 chainId;
             AccessList[] accesslist;

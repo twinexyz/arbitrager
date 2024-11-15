@@ -16,7 +16,9 @@ use alloy::{
     sol,
     sol_types::SolEvent,
 };
-use alloy_primitives::{utils::format_units, FixedBytes, U256};
+use alloy_primitives::{
+    utils::format_units, FixedBytes, U256,
+};
 use alloy_provider::{Provider, WalletProvider};
 use anyhow::Result;
 
@@ -115,7 +117,7 @@ impl EVMProvider {
         let mut tx_types = HashMap::<u64, L2TxType>::new();
 
         let filter = Filter::new()
-            .events(["L1Deposit()","ForcedWithdrawal()"])
+            .events(["L1Deposit()", "ForcedWithdrawal()"])
             .at_block_hash(block_hash)
             .address(self.config.contract_address);
 
@@ -155,9 +157,6 @@ impl EVMProvider {
             } else {
                 continue;
             };
-            let r = FixedBytes::from_slice(&signature.r.as_le_bytes());
-            let s = FixedBytes::from_slice(&signature.s.as_le_bytes());
-            let v: u8 = if signature.v.gt(&U256::ZERO) {1u8} else {0u8};
 
             let l1_txn = TwineChain::TransactionObject {
                 from: txn.from,
@@ -167,9 +166,9 @@ impl EVMProvider {
                 value: txn.value,
                 maxFeePerGas: U256::from(txn.max_fee_per_gas.unwrap_or(0)),
                 maxPriorityFeePerGas: U256::from(txn.max_priority_fee_per_gas.unwrap_or(0)),
-                v,
-                r,
-                s,
+                v: signature.v.to(),
+                r: uint256_to_bytes32(signature.r),
+                s: uint256_to_bytes32(signature.s),
                 transactionHash: txn.hash,
                 blockHash: block.header.hash,
                 blockNumber: U256::from(block.header.number),
@@ -216,4 +215,10 @@ pub enum L2TxType {
     Deposit,
     Forced,
     Normal,
+}
+
+fn uint256_to_bytes32(val: U256) -> FixedBytes<32> {
+    let k: [u8; 32] = val.to_be_bytes();
+    let r: FixedBytes<32> = FixedBytes::from_slice(&k);
+    r
 }
