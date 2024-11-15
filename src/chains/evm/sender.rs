@@ -19,26 +19,18 @@ sol! {
 
         #[derive(Debug)]
         struct TransactionObject {
-            bytes32 transactionHash;
+            uint256 chainId;
             uint256 nonce;
-            bytes32 blockHash;
-            uint256 blockNumber;
-            uint256 transactionIndex;
-            address from;
+            uint256 maxPriorityFeePerGas;
+            uint256 maxFeePerGas;
+            uint256 gas;
             address to;
             uint256 value;
-            uint256 gasprice;
-            uint256 gas;
-            uint256 maxFeePerGas;
-            uint256 maxPriorityFeePerGas;
             bytes input;
+            AccessList[] accesslist;
+            uint64 v;
             bytes32 r;
             bytes32 s;
-            uint64 v;
-            uint256 yParity;
-            uint256 chainId;
-            AccessList[] accesslist;
-            uint256 TransactionType;
         }
 
         #[derive(Debug)]

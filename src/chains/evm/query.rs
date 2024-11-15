@@ -159,7 +159,6 @@ impl EVMProvider {
             };
 
             let l1_txn = TwineChain::TransactionObject {
-                from: txn.from,
                 // for contract creation, to address can be none
                 to: txn.to.unwrap_or_default(),
                 nonce: U256::from(txn.nonce),
@@ -169,17 +168,10 @@ impl EVMProvider {
                 v: signature.v.to(),
                 r: uint256_to_bytes32(signature.r),
                 s: uint256_to_bytes32(signature.s),
-                transactionHash: txn.hash,
-                blockHash: block.header.hash,
-                blockNumber: U256::from(block.header.number),
-                transactionIndex: U256::from(txn.transaction_index.unwrap()),
-                gasprice: U256::from(txn.gas_price.unwrap()),
                 gas: U256::from(txn.gas),
                 input: txn.input,
-                yParity: U256::from(block.header.number),
                 chainId: U256::from(txn.chain_id.unwrap()),
                 accesslist: Vec::new(),
-                TransactionType: U256::from(2),
             };
 
             // when is index optional in txn ?
