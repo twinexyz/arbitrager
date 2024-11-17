@@ -44,9 +44,6 @@ pub enum Commands {
         height: u64,
 
         #[arg(short, long)]
-        batch: u64,
-
-        #[arg(short, long)]
         chain: String,
 
         #[arg(short, long)]
@@ -100,12 +97,11 @@ pub async fn init() -> Result<()> {
         Commands::DeleteDB => delete_db(cfg).await,
         Commands::ManualRelay {
             height,
-            batch,
             chain,
             proof_type,
             proof_json,
         } => {
-            manual_proof_relay(cfg, height, batch, chain, proof_type, proof_json).await;
+            manual_proof_relay(cfg, height, chain, proof_type, proof_json).await;
             Ok(())
         }
     }
@@ -115,7 +111,6 @@ pub async fn init() -> Result<()> {
 pub async fn manual_proof_relay(
     cfg: Config,
     height: &u64,
-    batch_number: &u64,
     chain: &String,
     proof_type: &String,
     proof_json: &PathBuf,
@@ -134,11 +129,10 @@ pub async fn manual_proof_relay(
             );
             let provider = EVMProvider::new(provider_config);
 
-            let mut commit_batch_info = provider
+            let commit_batch_info = provider
                 .fetch_commit_batch(*height)
                 .await
                 .expect("Failed to construct commit batch info");
-            commit_batch_info.batchNumber = *batch_number;
 
             match provider.commit_batch(commit_batch_info, *height).await {
                 Ok(_) => {

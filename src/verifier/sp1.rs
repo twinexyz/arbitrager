@@ -150,7 +150,6 @@ mod test {
 
     #[test]
     fn test_verify_sp1_proof() {
-        let client = ProverClient::new();
         let elf = include_bytes!("../../assets/elf/riscv32im-succinct-zkvm-elf");
         // Initialize the prover client.
         let client = ProverClient::new();

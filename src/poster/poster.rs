@@ -22,7 +22,6 @@ pub struct Poster {
     pub providers: HashMap<String, ChainProviders>,
     pub post_status_tx: Sender<PostStatus>,
     pub l2_provider: EVMProvider,
-    pub batch_number: u64,
 }
 
 impl Poster {
@@ -30,13 +29,11 @@ impl Poster {
         l1s: HashMap<String, ChainProviders>,
         post_status_tx: Sender<PostStatus>,
         l2_provider: EVMProvider,
-        batch_number: u64,
     ) -> Self {
         Self {
             providers: l1s,
             post_status_tx,
             l2_provider,
-            batch_number,
         }
     }
 
@@ -49,13 +46,12 @@ impl Poster {
             tracing::info!("Ready for commit batch and finalize batch");
             // handle batch number here
             let l2_height = data.height();
-            let mut commit_batch_info = self.l2_provider.fetch_commit_batch(l2_height).await?;
-            commit_batch_info.batchNumber = self.batch_number;
+            let commit_batch_info = self.l2_provider.fetch_commit_batch(l2_height).await?;
             for (chain, provider) in &self.providers {
                 let chain = chain.to_string();
                 let batch = commit_batch_info.clone();
                 let batch_number = batch.batchNumber;
-                let data_clone = data.clone().with_batch(batch_number);
+                let data_clone = data.clone();
                 match provider.commit_batch(batch, l2_height).await {
                     Ok(_) => {
                         tracing::info!("Batch committed! batch: {} chain: {}", batch_number, chain);
@@ -91,7 +87,6 @@ impl Poster {
                     }
                 }
             }
-            self.batch_number += 1;
         }
         Ok(())
     }

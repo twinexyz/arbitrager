@@ -31,7 +31,6 @@ pub struct L2Details {
     pub chain_type: String,
     pub messenger_contract: String,
     pub rpc: String,
-    pub start_batch_number: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

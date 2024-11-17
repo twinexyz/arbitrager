@@ -46,7 +46,6 @@ pub async fn run(cfg: Config) -> Result<()> {
     let balance_check_interval = cfg.global.balance_check_interval;
     let l1s = cfg.l1s;
     let l2 = cfg.l2;
-    let start_batch_number = l2.start_batch_number;
 
     let elfs: HashMap<String, String> = cfg.elf;
     {
@@ -70,7 +69,6 @@ pub async fn run(cfg: Config) -> Result<()> {
         providers,
         post_status_tx,
         make_l2_provider(l2),
-        start_batch_number,
     );
 
     let server_task = task::spawn(async move {

@@ -32,14 +32,6 @@ impl PostParams {
             PostParams::Dummy(_, h) => *h,
         }
     }
-
-    pub fn with_batch(&self, batch: u64) -> PostParams {
-        match self {
-            PostParams::RiscZero(p, _) => PostParams::RiscZero(p.clone(), batch),
-            PostParams::Sp1(p, _) => PostParams::Sp1(p.clone(), batch),
-            PostParams::Dummy(p, _) => PostParams::Dummy(p.clone(), batch),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
