@@ -73,7 +73,10 @@ impl ProofTraits for SP1 {
                     .ok_or(ArbitragerError::ProofParsingFailed)?
                     .encoded_proof;
 
-                // TODO: Handle versions dynamically
+
+                // TODO: Handle versions dynamically, fetch the key using Groth16Bn254Prover::get_vkey_hash method
+                // bytes4(hash) is the selector
+                // https://github.com/succinctlabs/sp1/blob/dev/crates/recursion/gnark-ffi/src/groth16_bn254.rs#L32
                 let verifier_selector = "0x09069090".to_string();
 
                 let final_proof = format!("{}{}", verifier_selector, prf);
