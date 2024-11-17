@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{chains::chains::L1Transactions, types::PostParams};
 
 use super::provider::EVMProvider;
-use alloy::{rpc::types::TransactionRequest, sol};
+use alloy::{hex::ToHexExt, rpc::types::TransactionRequest, sol, sol_types::SolValue};
 
 use alloy_primitives::U256;
 use alloy_provider::Provider;
@@ -66,6 +66,9 @@ impl L1Transactions for EVMProvider {
         tracing::info!("Commit batch for batch: {}", params.batchNumber);
         let batch = params.batchNumber;
         let contract = TwineChain::new(self.config.contract_address, self.provider.clone());
+        let abi_encoded_params = params.abi_encode().as_slice().encode_hex();
+        tracing::debug!("Params: {}", abi_encoded_params);
+        
         let tx_data = contract.commitBatch(params);
 
         let tx_req = tx_data
@@ -99,6 +102,8 @@ impl L1Transactions for EVMProvider {
 
                 let plonk_proof = sp1_params.plonk_proof;
                 let block = U256::from(block);
+
+                tracing::debug!("Groth16 proof bytes: {plonk_proof}");
 
                 let tx_data = contract.finalizeBatch(block, plonk_proof.clone());
 
