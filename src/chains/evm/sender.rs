@@ -66,9 +66,9 @@ impl L1Transactions for EVMProvider {
         tracing::info!("Commit batch for batch: {}", params.batchNumber);
         let batch = params.batchNumber;
         let contract = TwineChain::new(self.config.contract_address, self.provider.clone());
-        let abi_encoded_params = params.abi_encode().as_slice().encode_hex();
-        tracing::debug!("Params: {}", abi_encoded_params);
-        
+        let abi_encoded_params = params.abi_encode_packed().as_slice().encode_hex();
+        tracing::debug!("Abi Encoded Commit Batch Params: {}", abi_encoded_params);
+
         let tx_data = contract.commitBatch(params);
 
         let tx_req = tx_data

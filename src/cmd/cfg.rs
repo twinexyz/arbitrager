@@ -1,7 +1,7 @@
 use crate::{
     arbitrager::run,
     chains::{
-        chains::{FetchL2TransactionData, L1Transactions},
+        chains::{make_l2_provider, FetchL2TransactionData, L1Transactions},
         evm::provider::{EVMProvider, EVMProviderConfig},
     },
     config::Config,
@@ -115,10 +115,13 @@ pub async fn manual_proof_relay(
     proof_type: &String,
     proof_json: &PathBuf,
 ) {
-    let l2_chains = cfg.l1s;
+    let l1_chains = cfg.l1s;
     let proof_string =
         std::fs::read_to_string(proof_json).expect("Failed to read proof file as string");
-    let destination = l2_chains.get(chain).expect("Invalid chain name");
+    let destination = l1_chains.get(chain).expect("Invalid chain name");
+
+    let l2_chain = cfg.l2;
+    let l2_provider = make_l2_provider(l2_chain);
     match destination {
         crate::config::L1Details::Solana(_solana_config) => todo!(),
         crate::config::L1Details::EVM(evmconfig) => {
@@ -127,14 +130,14 @@ pub async fn manual_proof_relay(
                 evmconfig.private_key.clone(),
                 evmconfig.contract.clone(),
             );
-            let provider = EVMProvider::new(provider_config);
+            let l1_provider = EVMProvider::new(provider_config);
 
-            let commit_batch_info = provider
+            let commit_batch_info = l2_provider
                 .fetch_commit_batch(*height)
                 .await
                 .expect("Failed to construct commit batch info");
 
-            match provider.commit_batch(commit_batch_info, *height).await {
+            match l1_provider.commit_batch(commit_batch_info, *height).await {
                 Ok(_) => {
                     println!("Commit batch successful");
                 }
@@ -152,7 +155,7 @@ pub async fn manual_proof_relay(
                 }
                 .expect("Failed to construct proof params");
 
-            match provider.submit_proof(post_params).await {
+            match l1_provider.submit_proof(post_params).await {
                 Ok(_) => {
                     println!("Proof submission successful ");
                 }
