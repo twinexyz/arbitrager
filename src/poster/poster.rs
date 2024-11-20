@@ -47,44 +47,73 @@ impl Poster {
             // handle batch number here
             let l2_height = data.height();
             let commit_batch_info = self.l2_provider.fetch_commit_batch(l2_height).await?;
-            for (chain, provider) in &self.providers {
+            let providers = self.providers.clone();
+            let mut tasks = vec![];
+
+            for (chain, provider) in providers {
                 let chain = chain.to_string();
                 let batch = commit_batch_info.clone();
                 let batch_number = batch.batchNumber;
                 let data_clone = data.clone();
-                match provider.commit_batch(batch, l2_height).await {
-                    Ok(_) => {
-                        tracing::info!("Batch committed! batch: {} chain: {}", batch_number, chain);
-                    }
-                    Err(_) => {
-                        // notify
-                        tracing::error!("Failed posting batch: {} chain: {}", batch_number, chain);
-                    }
-                }
+                let post_status_tx = self.post_status_tx.clone();
 
-                match provider.submit_proof(data_clone.clone()).await {
-                    Ok(_) => {
-                        tracing::info!("Proof submitted. chain:{}", chain);
-                        let post_status = match data_clone {
-                            PostParams::RiscZero(_risc0_params, _) => todo!(),
-                            PostParams::Sp1(_sp1params, block) => PostStatus {
-                                chain: chain.clone(),
-                                block,
-                                posted: true,
-                            },
-                            PostParams::Dummy(_, block) => PostStatus {
-                                chain,
-                                block,
-                                posted: true,
-                            },
-                        };
-                        info!("Post status received. Sending status to post_status channel");
-                        self.post_status_tx.send(post_status).await?;
+                let task = tokio::spawn(async move {
+                    match provider.commit_batch(batch, l2_height).await {
+                        Ok(_) => {
+                            tracing::info!(
+                                "Batch committed! batch: {} chain: {}",
+                                batch_number,
+                                chain
+                            );
+                        }
+                        Err(_) => {
+                            // notify
+                            tracing::error!(
+                                "Failed posting batch: {} chain: {}",
+                                batch_number,
+                                chain
+                            );
+                        }
                     }
-                    Err(_) => {
-                        // notify
-                        tracing::error!("Fail to submit proof. chain:{}", chain);
+
+                    match provider.submit_proof(data_clone.clone()).await {
+                        Ok(_) => {
+                            tracing::info!("Proof submitted. chain:{}", chain);
+                            let post_status = match data_clone {
+                                PostParams::RiscZero(_risc0_params, _) => todo!(),
+                                PostParams::Sp1(_sp1params, block) => PostStatus {
+                                    chain: chain.clone(),
+                                    block,
+                                    posted: true,
+                                },
+                                PostParams::Dummy(_, block) => PostStatus {
+                                    chain: chain.clone(),
+                                    block,
+                                    posted: true,
+                                },
+                            };
+                            info!("Post status received. Sending status to post_status channel");
+                            if let Err(e) = post_status_tx.send(post_status).await {
+                                tracing::error!(
+                                    "Failed to send post status. chain: {} error: {}",
+                                    chain,
+                                    e.to_string()
+                                );
+                            }
+                        }
+                        Err(_) => {
+                            // notify
+                            tracing::error!("Fail to submit proof. chain:{}", chain);
+                        }
                     }
+                });
+                tasks.push(task);
+            }
+
+            // Wait for all spawned tasks to complete
+            for task in tasks {
+                if let Err(err) = task.await {
+                    tracing::error!("Task failed with error: {:?}", err);
                 }
             }
         }
