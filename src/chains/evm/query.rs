@@ -41,10 +41,20 @@ sol! {
     contract L2Messenger {
 
         #[derive(Debug)]
-        event L1Deposit();
+        event L1TokenDeposit();
 
         #[derive(Debug)]
-        event ForcedWithdrawal();
+        event ForcedWithdrawal(
+            address indexed from,
+            address to,
+            address counterpartGateway,
+            address counterpartMessenger,
+            uint256 value,
+            uint256 indexed chainId,
+            uint256 blockNumber,
+            uint256 gasLimit,
+            bytes message
+        );
 
     }
 }
@@ -125,7 +135,7 @@ impl EVMProvider {
 
         for l in logs {
             match l.topic0() {
-                Some(&L2Messenger::L1Deposit::SIGNATURE_HASH) => {
+                Some(&L2Messenger::L1TokenDeposit::SIGNATURE_HASH) => {
                     if let Some(idx) = l.transaction_index {
                         tx_types.insert(idx, L2TxType::Deposit);
                     }
