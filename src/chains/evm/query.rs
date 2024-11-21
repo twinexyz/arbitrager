@@ -16,9 +16,7 @@ use alloy::{
     sol,
     sol_types::SolEvent,
 };
-use alloy_primitives::{
-    utils::format_units, FixedBytes, U256,
-};
+use alloy_primitives::{utils::format_units, FixedBytes, U256};
 use alloy_provider::{Provider, WalletProvider};
 use anyhow::Result;
 
@@ -127,7 +125,7 @@ impl EVMProvider {
         let mut tx_types = HashMap::<u64, L2TxType>::new();
 
         let filter = Filter::new()
-            .events(["L1Deposit()", "ForcedWithdrawal()"])
+            .events(["L1TokenDeposit()", "ForcedWithdrawal(address,address,address,address,uint256,uint256,uint256,uint256,bytes)"])
             .at_block_hash(block_hash)
             .address(self.config.contract_address);
 
