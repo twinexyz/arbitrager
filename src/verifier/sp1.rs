@@ -1,5 +1,6 @@
 use std::fs::{self};
 
+use alloy::hex::ToHexExt;
 use alloy_primitives::{Bytes, FixedBytes};
 use anyhow::Result;
 use hex::FromHex;
@@ -39,7 +40,6 @@ impl SP1 {
         let vk_hash = vk.bytes32();
         tracing::info!("The verifying key is: {}", vk_hash);
 
-
         SP1 {
             prover_client: client,
             vk,
@@ -73,7 +73,6 @@ impl ProofTraits for SP1 {
                     .ok_or(ArbitragerError::ProofParsingFailed)?
                     .encoded_proof;
 
-
                 // TODO: Handle versions dynamically, fetch the key using Groth16Bn254Prover::get_vkey_hash method
                 // bytes4(hash) is the selector
                 // https://github.com/succinctlabs/sp1/blob/dev/crates/recursion/gnark-ffi/src/groth16_bn254.rs#L32
@@ -101,6 +100,12 @@ impl ProofTraits for SP1 {
                 Err(e.into())
             }
         }
+    }
+
+    fn public_values(proof_json: &std::path::PathBuf) -> Result<String> {
+        let proof_string = std::fs::read_to_string(proof_json)?;
+        let proof = serde_json::from_str::<SP1ProofWithPublicValues>(&proof_string)?;
+        Ok(proof.public_values.encode_hex())
     }
 }
 

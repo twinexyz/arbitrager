@@ -9,4 +9,9 @@ impl ProofTraits for Dummy {
         let _ = blocku64;
         todo!()
     }
+    
+    fn public_values(proof_json: &std::path::PathBuf) -> Result<String> {
+        let _ = proof_json;
+        todo!()
+    }
 }

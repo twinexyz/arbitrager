@@ -9,4 +9,9 @@ impl ProofTraits for RISC0 {
         let _ = proof;
         todo!()
     }
+    
+    fn public_values(proof_json: &std::path::PathBuf) -> Result<String> {
+        let _ = proof_json;
+        todo!()
+    }
 }

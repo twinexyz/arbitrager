@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Result;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -12,6 +12,7 @@ use super::sp1::SP1;
 
 pub trait ProofTraits {
     fn process_proof(proof: String, blocku64: u64) -> Result<PostParams>;
+    fn public_values(proof_json: &PathBuf) -> Result<String>;
 }
 
 pub struct Verifier {

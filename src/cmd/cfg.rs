@@ -52,6 +52,13 @@ pub enum Commands {
         #[arg(short, long)]
         proof_json: PathBuf,
     },
+    PublicValues {
+        #[arg(short, long)]
+        proof_type: String,
+
+        #[arg(short, long)]
+        proof_json: PathBuf,
+    },
 }
 
 fn default_config_path() -> PathBuf {
@@ -104,7 +111,23 @@ pub async fn init() -> Result<()> {
             manual_proof_relay(cfg, height, chain, proof_type, proof_json).await;
             Ok(())
         }
+        Commands::PublicValues {
+            proof_type,
+            proof_json,
+        } => print_public_values(proof_type, proof_json),
     }
+}
+
+fn print_public_values(proof_type: &String, proof_json: &PathBuf) -> Result<()> {
+    let public_values = match SupportedProvers::from_str(proof_type).expect("Invalid proof type") {
+        SupportedProvers::SP1 => SP1::public_values(proof_json),
+        SupportedProvers::RISC0 => RISC0::public_values(proof_json),
+        SupportedProvers::Dummy => RISC0::public_values(proof_json),
+    }?;
+
+    println!("Public values:  {public_values}");
+
+    return Ok(());
 }
 
 // for manual relaying, so unwrap/expect is okay
