@@ -7,8 +7,8 @@ use hex::FromHex;
 use sp1_sdk::{HashableKey, ProverClient, SP1ProofWithPublicValues, SP1VerifyingKey};
 
 use crate::{
-    arbitrager::ELF_CONFIG,
-    error::ArbitragerError,
+    aggregator::ELF_CONFIG,
+    error::AggregatorError,
     types::{PostParams, Sp1params, SupportedProvers},
 };
 
@@ -28,11 +28,11 @@ impl SP1 {
 
         let elf_path = binding
             .get(&SupportedProvers::SP1.to_string())
-            .ok_or_else(|| ArbitragerError::ELFFileNotFound(SupportedProvers::SP1.to_string()))
+            .ok_or_else(|| AggregatorError::ELFFileNotFound(SupportedProvers::SP1.to_string()))
             .unwrap();
 
         let elf = fs::read(elf_path)
-            .map_err(|_| ArbitragerError::FailToReadELF)
+            .map_err(|_| AggregatorError::FailToReadELF)
             .unwrap();
 
         let (_, vk) = client.setup(&elf);
@@ -70,7 +70,7 @@ impl ProofTraits for SP1 {
                     .clone()
                     .proof
                     .try_as_groth_16()
-                    .ok_or(ArbitragerError::ProofParsingFailed)?
+                    .ok_or(AggregatorError::ProofParsingFailed)?
                     .encoded_proof;
 
                 // TODO: Handle versions dynamically, fetch the key using Groth16Bn254Prover::get_vkey_hash method
@@ -118,9 +118,9 @@ pub fn verify_sp1_proof(proof: SP1ProofWithPublicValues) -> Result<u64> {
 
     let elf_path = binding
         .get(&SupportedProvers::SP1.to_string())
-        .ok_or_else(|| ArbitragerError::ELFFileNotFound(SupportedProvers::SP1.to_string()))?;
+        .ok_or_else(|| AggregatorError::ELFFileNotFound(SupportedProvers::SP1.to_string()))?;
 
-    let elf = fs::read(elf_path).map_err(|_| ArbitragerError::FailToReadELF)?;
+    let elf = fs::read(elf_path).map_err(|_| AggregatorError::FailToReadELF)?;
 
     let (_, vk) = client.setup(&elf);
 

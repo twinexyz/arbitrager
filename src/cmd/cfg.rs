@@ -1,5 +1,5 @@
 use crate::{
-    arbitrager::run,
+    aggregator::run,
     chains::{
         chains::{make_l2_provider, FetchL2TransactionData, L1Transactions},
         evm::provider::{EVMProvider, EVMProviderConfig},
@@ -21,10 +21,10 @@ use std::{
 
 use super::logger::logging;
 
-const DEFAULT_CONFIG_DIR: &str = ".twine/arbitrager/config.yaml";
+const DEFAULT_CONFIG_DIR: &str = ".twine/aggregator/config.yaml";
 
 #[derive(Parser, Debug)]
-#[command(name = "twarb")]
+#[command(name = "twine-aggregator")]
 #[command(version, about, long_about = None)]
 pub struct Args {
     #[command(subcommand)]
@@ -193,7 +193,7 @@ pub async fn manual_proof_relay(
 async fn handle_run_command(cfg: Config) -> Result<()> {
     // Run the main process
     let _ = run(cfg).await.map_err(|e| {
-        tracing::error!("Error running arbitrager: {}", e);
+        tracing::error!("Error running aggregator: {}", e);
         process::exit(1);
     });
 

@@ -1,4 +1,4 @@
-pub mod arbitrager;
+pub mod aggregator;
 pub mod balance_checker;
 pub mod chains;
 pub mod cmd;

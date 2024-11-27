@@ -5,7 +5,7 @@ use sp1_sdk::SP1ProofWithPublicValues;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::Sender;
 
-use crate::{error::ArbitragerError, json_rpc_server::ServerReturnType, types::ProofType};
+use crate::{error::AggregatorError, json_rpc_server::ServerReturnType, types::ProofType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -115,7 +115,7 @@ impl JsonRpcServer {
 
         if !self.valid_senders.contains_key(&identifier) {
             tracing::error!("Invalid sender. Identifier:{}", identifier);
-            return Err(ArbitragerError::InvalidSender(identifier).into());
+            return Err(AggregatorError::InvalidSender(identifier).into());
         }
 
         self.verifier_tx

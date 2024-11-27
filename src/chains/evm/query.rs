@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     chains::chains::{BalanceProvider, FetchL2TransactionData},
-    error::ArbitragerError,
+    error::AggregatorError,
     MAX_RETRIES,
 };
 
@@ -105,7 +105,7 @@ impl FetchL2TransactionData for EVMProvider {
                     attempt += 1;
                     if attempt > MAX_RETRIES {
                         tracing::error!("Failed to query after {MAX_RETRIES} attempts");
-                        return Err(ArbitragerError::Custom(
+                        return Err(AggregatorError::Custom(
                             "Failed to fetch commit batch params".to_string(),
                         )
                         .into());
