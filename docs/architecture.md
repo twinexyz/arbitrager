@@ -36,25 +36,27 @@ The aggregator coordinates the flow of execution proofs, verifies them, and comm
 ### **4. Groth16 Block Proof**
 - After the block information is committed, the aggregator sends the corresponding Groth16 proof to the L1s to complete the block submission process.
 
----
 
-## **Key Features**
+## **Settlement on L1**
+### **1. Commit Batch**
+- All the transactions in a block are commited to L1. There are primarily 4 types of transactions, which are explained in detail [here](../docs/transactions.md)
+- The transactions are separated based on these 4 types, and are posted in each L1s. 
+- The parameter structure for commiting a batch to L1 is:
 
-### **1. High Throughput**
-- Multiple execution provers operate concurrently to generate proofs, ensuring the system meets the demands of Twine’s block time.
+    ```c
+    struct CommitBatchInfo{
+        uint64 batchNumber;
+        bytes32 batchHash;
+        bytes32 previousStateRoot;
+        bytes32 stateRoot;
+        bytes32 transactionRoot;
+        bytes32 receiptRoot;
+        TransactionObject[] depositTransactionObject;
+        TransactionObject[] forcedTransactionObjects;
+        TransactionObject[] layerZeroTransactionObjects;
+        TransactionObject[] otherTransactions;
+    }
+    ```
 
-### **2. Fault Tolerance**
-- Aggregator retries proof submissions and L1 commits in case of transaction failures.
-
-### **3. Transaction Categorization**
-- Separates block transactions into distinct categories for better handling on L1s.
-- Supports:
-  - L1 Deposits
-  - L1 Forced Withdrawals
-  - Layer Zero DVN Transactions
-  - Regular L2 Transactions
-- This is explained in detail [here](./transactions.md)
-
-### **4. Multi-L1 Support**
-- The aggregator is compatible with multiple Layer 1 blockchains.
-- Enables seamless interaction and synchronization across different L1s.
+### **2. Finalize Batch**
+- Once the batch is commited, groth16 proof for verifying the correct block execution is submitted to L1. Once this verification is complete on L1, we can confirm the block has been settled on L1. 
