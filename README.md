@@ -1,18 +1,18 @@
-# Twine Arbitrager
+# Twine Aggregator
 
-Twine arbitrager aggregates proofs from the provers for twine node. When k out of N proofs are verified, then, this service posts the proofs to all the L1s.
+Twine aggregator aggregates proofs from the provers for twine node. Once it receives proofs from the prover servers, it verifies the proof and after that this service posts the transactions in block and the block execution proofs to all the L1s.
 
-![Twine Arbitrager Architecture](./assets/image.png)
+![Twine Aggregator Architecture](./assets/image.png)
 
 > Note: Ensure docker is installed and is running. It's used to verify the proof. On the first proof verification, the required docker image should download automatically.
 
-## Run Arbitrager
+## Run Aggregator
 1. Generate config based on config.yaml.
     > Note: You might have to give network access to mongodb atlas if you're using one.
 
 
 
-2. Run the arbitrager as
+2. Run the aggregator as
     ```sh
     cargo build --release
     cargo run --release -- --config temp-config.yaml run
