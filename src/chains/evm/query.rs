@@ -54,6 +54,11 @@ sol! {
             bytes message
         );
 
+        #[derive(Debug)]
+        event LayerzeroPayload(
+            bytes32 guid,
+        );
+
     }
 }
 
@@ -125,7 +130,7 @@ impl EVMProvider {
         let mut tx_types = HashMap::<u64, L2TxType>::new();
 
         let filter = Filter::new()
-            .events(["L1TokenDeposit()", "ForcedWithdrawal(address,address,address,address,uint256,uint256,uint256,uint256,bytes)"])
+            .events(["L1TokenDeposit()", "ForcedWithdrawal(address,address,address,address,uint256,uint256,uint256,uint256,bytes)","LayerzeroPayload(bytes32)"])
             .at_block_hash(block_hash)
             .address(self.config.contract_address);
 
@@ -143,6 +148,11 @@ impl EVMProvider {
                         tx_types.insert(idx, L2TxType::Forced);
                     }
                 }
+                Some(&L2Messenger::LayerzeroPayload::SIGNATURE_HASH) => {
+                    if let Some(idx) = l.transaction_index {
+                        tx_types.insert(idx, L2TxType::LZ);
+                    }
+                }
                 _ => (),
             }
         }
@@ -157,6 +167,7 @@ impl EVMProvider {
     ) -> TwineChain::CommitBatchInfo {
         let mut deposit_txns_object = Vec::new();
         let mut withdraw_txns_object = Vec::new();
+        let mut lz_txns_object= Vec::new();
         let mut normal_txns_object = Vec::new();
 
         for txn in block.transactions.into_transactions() {
@@ -188,6 +199,7 @@ impl EVMProvider {
                 Some(tx_type) => match tx_type {
                     L2TxType::Deposit => deposit_txns_object.push(l1_txn),
                     L2TxType::Forced => withdraw_txns_object.push(l1_txn),
+                    L2TxType::LZ => lz_txns_object.push(l1_txn),
                     L2TxType::Normal => panic!("should not arrive here"),
                 },
                 None => {
@@ -206,6 +218,7 @@ impl EVMProvider {
             otherTransactions: normal_txns_object,
             depositTransactionObject: deposit_txns_object,
             forcedTransactionObjects: withdraw_txns_object,
+            lzDvnTransactions: lz_txns_object,
         }
     }
 }
@@ -215,6 +228,7 @@ pub enum L2TxType {
     Deposit,
     Forced,
     Normal,
+    LZ,
 }
 
 fn uint256_to_bytes32(val: U256) -> FixedBytes<32> {

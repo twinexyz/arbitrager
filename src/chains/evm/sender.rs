@@ -51,6 +51,7 @@ sol! {
             TransactionObject[] depositTransactionObject;
             TransactionObject[] forcedTransactionObjects;
             TransactionObject[] otherTransactions;
+            TransactionObject[] lzDvnTransactions;
         }
 
         #[derive(Debug)]
