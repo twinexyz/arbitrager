@@ -50,8 +50,8 @@ sol! {
             bytes32 receiptRoot;
             TransactionObject[] depositTransactionObject;
             TransactionObject[] forcedTransactionObjects;
-            TransactionObject[] otherTransactions;
             TransactionObject[] lzDvnTransactions;
+            TransactionObject[] otherTransactions;
         }
 
         #[derive(Debug)]

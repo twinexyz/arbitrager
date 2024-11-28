@@ -56,9 +56,9 @@ sol! {
 
         #[derive(Debug)]
         event LayerzeroPayload(
-            bytes32 guid,
+            uint256 indexed sourceChainId,
+            bytes32 indexed guId
         );
-
     }
 }
 
@@ -130,7 +130,7 @@ impl EVMProvider {
         let mut tx_types = HashMap::<u64, L2TxType>::new();
 
         let filter = Filter::new()
-            .events(["L1TokenDeposit()", "ForcedWithdrawal(address,address,address,address,uint256,uint256,uint256,uint256,bytes)","LayerzeroPayload(bytes32)"])
+            .events(["L1TokenDeposit()", "ForcedWithdrawal(address,address,address,address,uint256,uint256,uint256,uint256,bytes)","LayerzeroPayload(uint256,bytes32)"])
             .at_block_hash(block_hash)
             .address(self.config.contract_address);
 
