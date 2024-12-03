@@ -12,7 +12,7 @@ use crate::{
     chains::chains::{make_l2_provider, make_providers, ChainProviders},
     config::Config,
     database::db::DB,
-    error::ArbitragerError,
+    error::AggregatorError,
     json_rpc_server::server::JsonRpcServer,
     poster::poster::Poster,
     types::make_threshold_map,
@@ -23,7 +23,7 @@ pub static ELF_CONFIG: Lazy<RwLock<HashMap<String, String>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 pub async fn run(cfg: Config) -> Result<()> {
-    tracing::info!("Starting twine arbitrager");
+    tracing::info!("Starting twine aggregator");
 
     let provers: HashMap<String, String> = cfg
         .provers
@@ -75,7 +75,7 @@ pub async fn run(cfg: Config) -> Result<()> {
         proof_receiver
             .run_server(port)
             .await
-            .map_err(|e| ArbitragerError::JsonRPCServerError(e.to_string()))
+            .map_err(|e| AggregatorError::JsonRPCServerError(e.to_string()))
     });
 
     let sp1 = SP1::new().await;
@@ -84,7 +84,7 @@ pub async fn run(cfg: Config) -> Result<()> {
         verifier
             .run(sp1, poster_tx)
             .await
-            .map_err(|e| ArbitragerError::Custom(e.to_string()))
+            .map_err(|e| AggregatorError::Custom(e.to_string()))
     });
 
     let db_clone = Arc::clone(&db_arc);
@@ -92,14 +92,14 @@ pub async fn run(cfg: Config) -> Result<()> {
         db_clone
             .run(post_status_rx)
             .await
-            .map_err(|e| ArbitragerError::DBError(e.to_string()))
+            .map_err(|e| AggregatorError::DBError(e.to_string()))
     });
 
     let poster_task = task::spawn(async move {
         poster
             .run(poster_rx)
             .await
-            .map_err(|e| ArbitragerError::PosterError(e.to_string()))
+            .map_err(|e| AggregatorError::PosterError(e.to_string()))
     });
 
     let balance_check_task = task::spawn(async move {

@@ -15,6 +15,6 @@ pub fn logging(level: &String) {
         .with_file(true)
         .with_line_number(true)
         .with_target(false)
-        .with_env_filter(EnvFilter::new("arbitrager=debug"))
+        .with_env_filter(EnvFilter::new("twine-aggregator=debug"))
         .init();
 }

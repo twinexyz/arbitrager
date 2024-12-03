@@ -815,32 +815,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
 
 [[package]]
-name = "arbitrager"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "alloy-primitives 0.8.7",
- "alloy-provider",
- "anyhow",
- "clap",
- "futures",
- "hex",
- "home",
- "jsonrpsee",
- "mongodb",
- "once_cell",
- "regex",
- "serde",
- "serde_json",
- "serde_yaml",
- "sp1-sdk",
- "tokio",
- "tracing",
- "tracing-attributes",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "ark-ff"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6822,6 +6796,32 @@ dependencies = [
  "sha1",
  "thiserror",
  "utf-8",
+]
+
+[[package]]
+name = "twine-aggregator"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "alloy-primitives 0.8.7",
+ "alloy-provider",
+ "anyhow",
+ "clap",
+ "futures",
+ "hex",
+ "home",
+ "jsonrpsee",
+ "mongodb",
+ "once_cell",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sp1-sdk",
+ "tokio",
+ "tracing",
+ "tracing-attributes",
+ "tracing-subscriber",
 ]
 
 [[package]]

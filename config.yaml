@@ -5,7 +5,7 @@ global:
   db_path: "mongodb+srv://lbackup887:<password>@twinearbitrager.zvxjk.mongodb.net/?retryWrites=true&w=majority&appName=TwineArbitrager"
   balance_check_interval: 10
 elf:
-  sp1: /home/lilixac/twine/arbitrager/assets/elf/riscv32im-succinct-zkvm-elf
+  sp1: /home/lilixac/twine/aggregator/assets/elf/riscv32im-succinct-zkvm-elf
   risc0: 
   dummy: 
 l2:

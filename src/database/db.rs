@@ -18,7 +18,7 @@ use crate::{verifier::sp1::SP1, MAX_RETRIES};
 
 use super::schema::{BlockFields, L1Details, ProofDetails, ProverDetails};
 
-static DB_NAME: &str = "twine_arbitrager";
+static DB_NAME: &str = "twine_aggregator";
 static PROOF_COLLECTION_NAME: &str = "proof_collection";
 static POSTER_COLLECTION_NAME: &str = "l1s_collection";
 
