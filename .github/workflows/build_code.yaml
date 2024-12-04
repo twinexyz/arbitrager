@@ -1,0 +1,35 @@
+name: Build Node
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build Project
+        run: cargo build --verbose
+
+      - name: Verify Target Directory and Binary
+        run: |
+          if [ -f "./target/debug/twine-aggregator" ]; then
+            echo "twine aggregator binary exists in target/debug."
+          else
+            echo "twine aggregator binary not found in target/debug!" && exit 1
+          fi
